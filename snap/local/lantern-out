@@ -1,3 +1,4 @@
 #!/bin/sh
-# Starts the exported game with its data pack.
-exec "$SNAP/game/lantern-out.x86_64" --main-pack "$SNAP/game/lantern-out.pck" "$@"
+# Starts the exported game. Release builds of Godot don't accept --main-pack;
+# they load lantern-out.pck from beside the binary on their own.
+exec "$SNAP/game/lantern-out.x86_64" "$@"
