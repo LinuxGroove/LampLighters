@@ -15,9 +15,6 @@ description: |
     meetings using a small language model that runs on your own machine
     (embedded Lemonade Server, downloaded on first use)
   - Made for controllers and handhelds, fully playable with a keyboard
-
-  On Ubuntu Core with Ubuntu Frame, `snap set lantern-out kiosk=true` runs
-  the game fullscreen as a service.
 grade: stable
 confinement: strict
 compression: lzo
@@ -29,47 +26,18 @@ issues: https://github.com/LinuxGroove/LampLighters/issues
 platforms:
   amd64:
 
-plugs:
-  gpu-2404:
-    interface: content
-    target: $SNAP/gpu-2404
-    default-provider: mesa-2404
-
-layout:
-  /usr/share/libdrm:
-    bind: $SNAP/gpu-2404/libdrm
-  /usr/share/drirc.d:
-    symlink: $SNAP/gpu-2404/drirc.d
-  /usr/share/X11/XErrorDB:
-    symlink: $SNAP/gpu-2404/X11/XErrorDB
-
-environment:
-  # $SNAP/bin first so lemond finds bsdtar as "tar" (see the lemonade part).
-  PATH: $SNAP/bin:$SNAP/usr/bin:$PATH
-  ALSA_CONFIG_PATH: $SNAP/usr/share/alsa/alsa.conf
-  XKB_CONFIG_ROOT: $SNAP/usr/share/X11/xkb
-
 apps:
   lantern-out:
     command: bin/lantern-out
-    command-chain: [bin/gpu-2404-wrapper]
-    plugs: &plugs
-      - wayland
-      - x11
-      - opengl
+    extensions: [gnome]
+    environment:
+      # $SNAP/bin first so lemond finds bsdtar as "tar" (see the lemonade part).
+      PATH: $SNAP/bin:$SNAP/usr/bin:$PATH
+    plugs:
       - audio-playback
       - joystick
       - network
       - network-bind
-      - desktop
-
-  kiosk:
-    command: bin/lantern-out-kiosk
-    command-chain: [bin/gpu-2404-wrapper]
-    daemon: simple
-    install-mode: disable
-    restart-condition: always
-    plugs: *plugs
 
 parts:
   lantern-out:
@@ -117,7 +85,7 @@ parts:
       mkdir -p "$CRAFT_PART_INSTALL/game" "$CRAFT_PART_INSTALL/bin"
       "$GODOT" --headless --path . --export-release Linux "$CRAFT_PART_INSTALL/game/lantern-out.x86_64"
       test -f "$CRAFT_PART_INSTALL/game/lantern-out.pck"
-      install -m 755 snap/local/lantern-out snap/local/lantern-out-kiosk "$CRAFT_PART_INSTALL/bin/"
+      install -m 755 snap/local/lantern-out "$CRAFT_PART_INSTALL/bin/"
       cp LICENSE CREDITS.md "$CRAFT_PART_INSTALL/game/"
 
   lemonade:
@@ -141,12 +109,3 @@ parts:
       - libssl3t64
       - libarchive-tools
 
-  gpu-2404:
-    after: [lantern-out, lemonade]
-    source: https://github.com/canonical/gpu-snap.git
-    plugin: dump
-    override-prime: |
-      craftctl default
-      ${CRAFT_PART_SRC}/bin/gpu-2404-cleanup mesa-2404
-    prime:
-      - bin/gpu-2404-wrapper

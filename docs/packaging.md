@@ -9,44 +9,30 @@ Lantern Out ships as the strictly confined snap `lantern-out`
    the pinned version (`GODOT_VERSION` in the yaml, keep it in step with
    `project.godot`), imports the project and runs
    `--export-release Linux` with the preset in `export_presets.cfg`. The
-   binary and `.pck` go to `$SNAP/game`, the launchers to `$SNAP/bin`.
+   binary and `.pck` go to `$SNAP/game`, the launcher to `$SNAP/bin`.
 2. **lemonade part**: unpacks the self-contained `lemonade-embeddable` release
    into `$SNAP/lemonade`. `lemond` downloads its llama.cpp backend as a
    `.tar.xz` at runtime and unpacks it with `tar` from `PATH`. GNU tar in the
    base can't run `xz` under confinement, so the part stages
    `libarchive-tools` and links `$SNAP/bin/tar` to `bsdtar`, and `$SNAP/bin`
    is first on `PATH`.
-3. **gpu-2404 part**: Canonical's `gpu-2404-wrapper`, which sets up Mesa
-   from the `mesa-2404` content snap and is in every app's command chain.
+3. The app uses the **gnome extension**, which brings the GNOME runtime,
+   Mesa through `gpu-2404`, and the desktop plugs (`wayland`, `x11`,
+   `opengl`, `desktop`). The same snap runs on an Ubuntu desktop and on a
+   handheld's gamepad shell.
 
 Build locally with `snapcraft pack`. CI builds the snap on every push and
 uploads it as an artifact (`.github/workflows/ci.yml`).
 
 ## Interfaces
 
-`wayland`, `x11`, `opengl`, `audio-playback`, `joystick` (controllers),
-`network` and `network-bind` (LAN games, discovery and the local model
-server), `desktop`. `joystick` is not auto-connected on desktops:
+The gnome extension's desktop plugs, plus `audio-playback`, `joystick`
+(controllers), and `network` and `network-bind` (LAN games, discovery and
+the local model server). `joystick` is not auto-connected on desktops:
 
 ```sh
 sudo snap connect lantern-out:joystick
 ```
-
-## Kiosk mode (Ubuntu Core)
-
-On Ubuntu Core with Ubuntu Frame, the game can run fullscreen as a service:
-
-```sh
-sudo snap install ubuntu-frame
-sudo snap install lantern-out
-sudo snap connect lantern-out:wayland ubuntu-frame:wayland
-sudo snap connect lantern-out:joystick
-sudo snap set lantern-out kiosk=true
-```
-
-`kiosk=false` stops and disables the service again. The `configure` hook does
-the switching; the `kiosk` daemon is `install-mode: disable` so desktops never
-start it.
 
 ## Where data lives
 
