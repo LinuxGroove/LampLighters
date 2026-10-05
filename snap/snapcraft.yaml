@@ -2,7 +2,7 @@ name: lantern-out
 title: Lantern Out
 adopt-info: lantern-out
 base: core24
-summary: Keep the village lanterns lit until dawn. One of your friends is blowing them out.
+summary: Keep the village lanterns lit until dawn while a friend blows them out.
 description: |
   Lantern Out is a social deduction party game for 4 to 10 players. At night
   the villagers keep the lanterns burning and finish their chores, while one
