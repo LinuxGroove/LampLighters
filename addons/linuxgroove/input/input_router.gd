@@ -197,7 +197,10 @@ func _input(event: InputEvent) -> void:
 				_last_nav[a] = now
 	var next := family
 	var has_pad := Input.get_connected_joypads().size() > 0
-	if event is InputEventKey or (event is InputEventMouseButton and not has_pad):
+	# Some pads (e.g. Xbox 360 clones) also expose virtual keyboard and mouse
+	# devices, so with a controller connected those events don't count as
+	# keyboard use.
+	if (event is InputEventKey or event is InputEventMouseButton) and not has_pad:
 		next = "keyboard"
 	elif event is InputEventJoypadButton:
 		next = family_for_joypad(event.device)
