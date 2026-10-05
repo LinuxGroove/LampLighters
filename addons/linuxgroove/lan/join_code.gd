@@ -4,10 +4,15 @@ extends RefCounted
 ## discovery broadcasts (hotel, campus and guest Wi-Fi).
 ##
 ## Common private ranges get short codes: 192.168.x.y on the default port is
-## 5 characters. Codes use Crockford base32 (no I, L, O or U), are
-## case-insensitive, and treat O as 0 and I or L as 1 when typed.
+## 5 characters. Codes are base 30 with no look-alike pairs: the Kenney fonts
+## draw 0 and O, 1 and I, 2 and Z, 5 and S, 8 and B the same, so each pair is
+## one symbol and either spelling is read the same way. Case doesn't matter.
 
-const ALPHABET := "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+const ALPHABET := "0123456789ACDEFGHJKMNPQRTUVWXY"
+const LOOK_ALIKES := {"O": "0", "I": "1", "L": "1", "Z": "2", "S": "5", "B": "8"}
+## Code length for each payload size in bytes (3 to 7): the fewest base-30
+## digits that hold that many bits. Every size has a different length.
+const LENGTHS := {3: 5, 4: 7, 5: 9, 6: 10, 7: 12}
 
 
 static func encode(ip: String, port: int, default_port: int) -> String:
@@ -31,16 +36,16 @@ static func encode(ip: String, port: int, default_port: int) -> String:
 	if custom_port:
 		bytes.append((port >> 8) & 0xFF)
 		bytes.append(port & 0xFF)
-	return _to_base32(bytes)
+	return _to_base30(bytes)
 
 
 ## Returns {"ip": String, "port": int}, or an empty dictionary if invalid.
 static func decode(code: String, default_port: int) -> Dictionary:
 	for ch in code.to_upper():
-		if not (ALPHABET.contains(ch) or ch in ["O", "I", "L", "-", " "]):
+		if not (ALPHABET.contains(ch) or LOOK_ALIKES.has(ch) or ch in ["-", " "]):
 			return {}
 	var clean := normalize(code)
-	var bytes := _from_base32(clean)
+	var bytes := _from_base30(clean)
 	if bytes.is_empty():
 		return {}
 	var header := bytes[0]
@@ -76,7 +81,7 @@ static func decode(code: String, default_port: int) -> Dictionary:
 		port = (bytes[used] << 8) | bytes[used + 1]
 		used += 2
 	# A typo usually changes the length; only exact codes are accepted.
-	if _to_base32(bytes.slice(0, used)) != clean:
+	if used != bytes.size():
 		return {}
 	return {"ip": ip, "port": port}
 
@@ -84,13 +89,10 @@ static func decode(code: String, default_port: int) -> Dictionary:
 static func normalize(code: String) -> String:
 	var out := ""
 	for ch in code.to_upper():
-		match ch:
-			"O": out += "0"
-			"I", "L": out += "1"
-			"-", " ": pass
-			_:
-				if ALPHABET.contains(ch):
-					out += ch
+		if LOOK_ALIKES.has(ch):
+			out += LOOK_ALIKES[ch]
+		elif ALPHABET.contains(ch):
+			out += ch
 	return out
 
 
@@ -104,32 +106,35 @@ static func pretty(code: String) -> String:
 	return out
 
 
-static func _to_base32(bytes: PackedByteArray) -> String:
-	var out := ""
-	var buffer := 0
-	var bits := 0
+static func _to_base30(bytes: PackedByteArray) -> String:
+	var value := 0
 	for byte in bytes:
-		buffer = (buffer << 8) | byte
-		bits += 8
-		while bits >= 5:
-			bits -= 5
-			out += ALPHABET[(buffer >> bits) & 31]
-	if bits > 0:
-		out += ALPHABET[(buffer << (5 - bits)) & 31]
+		value = (value << 8) | byte
+	var out := ""
+	for i in LENGTHS[bytes.size()]:
+		out = ALPHABET[value % 30] + out
+		value /= 30
 	return out
 
 
-static func _from_base32(code: String) -> PackedByteArray:
-	var out := PackedByteArray()
-	var buffer := 0
-	var bits := 0
+static func _from_base30(code: String) -> PackedByteArray:
+	var size := -1
+	for n in LENGTHS:
+		if LENGTHS[n] == code.length():
+			size = n
+	if size < 0:
+		return PackedByteArray()
+	var value := 0
 	for ch in code:
 		var v := ALPHABET.find(ch)
 		if v < 0:
 			return PackedByteArray()
-		buffer = ((buffer << 5) | v) & 0xFFFF
-		bits += 5
-		if bits >= 8:
-			bits -= 8
-			out.append((buffer >> bits) & 0xFF)
+		value = value * 30 + v
+	if value >= (1 << (8 * size)):
+		return PackedByteArray()
+	var out := PackedByteArray()
+	out.resize(size)
+	for i in range(size - 1, -1, -1):
+		out[i] = value & 0xFF
+		value >>= 8
 	return out
