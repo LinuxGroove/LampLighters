@@ -11,6 +11,7 @@ var _ui: Control
 var _col: VBoxContainer
 var _status: Label
 var _hosts_box: VBoxContainer
+var _about_scroll: ScrollContainer
 
 
 func _ready() -> void:
@@ -45,6 +46,7 @@ func _clear() -> void:
 	for c in _col.get_children():
 		c.queue_free()
 	_hosts_box = null
+	_about_scroll = null
 
 
 func _add_title() -> void:
@@ -73,6 +75,7 @@ func _show_main() -> void:
 	_col.add_child(LGUi.button("Play online", _show_online))
 	_col.add_child(LGUi.button("Settings", func(): _show_settings()))
 	_col.add_child(LGUi.button("Your name: %s" % Session.player_name(), func(): _show_name(false)))
+	_col.add_child(LGUi.button("About Lantern Out", _show_about))
 	var quit := LGUi.button("Quit", func(): get_tree().quit())
 	quit.theme_type_variation = "DangerButton"
 	_col.add_child(quit)
@@ -229,3 +232,67 @@ func _show_settings() -> void:
 	_col.add_child(panel)
 	_col.add_child(LGUi.button("Back", _show_main))
 	LGUi.focus_first(_col)
+
+
+## Credits. Up and down scroll the page, since Back is the only button.
+func _show_about() -> void:
+	_clear()
+	_col.add_child(LGUi.label("About Lantern Out", "HeaderMedium"))
+	_about_scroll = ScrollContainer.new()
+	_about_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_about_scroll.custom_minimum_size = Vector2(620, 520)
+	_col.add_child(_about_scroll)
+	var panel := PanelContainer.new()
+	panel.theme_type_variation = "GlassPanel"
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_about_scroll.add_child(panel)
+	var text := RichTextLabel.new()
+	text.bbcode_enabled = true
+	text.fit_content = true
+	text.scroll_active = false
+	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	text.text = ABOUT_TEXT % GameConfig.version()
+	panel.add_child(text)
+	var back := LGUi.button("Back", _show_main)
+	_col.add_child(back)
+	back.grab_focus.call_deferred()
+
+
+func _input(event: InputEvent) -> void:
+	if _about_scroll == null or not is_instance_valid(_about_scroll):
+		return
+	var step := 0
+	if event.is_action_pressed("ui_down", true):
+		step = 1
+	elif event.is_action_pressed("ui_up", true):
+		step = -1
+	if step != 0:
+		_about_scroll.scroll_vertical += step * 60
+		get_viewport().set_input_as_handled()
+
+
+const ABOUT_TEXT := """[center][b]Lantern Out[/b]  v%s
+A LinuxGroove game
+
+[b]Created by[/b]
+Ken VanDine
+
+[b]Art, sound, music and fonts[/b]
+Kenney (kenney.nl)
+Released under CC0. Thank you, Kenney!
+
+Mini Characters, Graveyard Kit, Fantasy Town Kit, Survival Kit,
+Cube Pets, Food Kit, Light Masks, Emote Pack, Input Prompts,
+UI Pack - Adventure, Kenney Fonts, Music Loops, RPG Audio,
+Impact Sounds, Interface Sounds, Music Jingles
+
+[b]Made with[/b]
+Godot Engine (godotengine.org), MIT
+Nakama Godot client by Heroic Labs, Apache-2.0
+Lemonade Server (lemonade-sdk), Apache-2.0, for AI players
+
+AI players' language models download on first use
+under their own licenses.
+
+Copyright (c) 2026 The LinuxGroove team
+Lantern Out is free software under the MIT license.[/center]"""
