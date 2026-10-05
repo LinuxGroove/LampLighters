@@ -19,6 +19,7 @@ func _ready() -> void:
 	_test_chores()
 	_test_quick_chat()
 	await _test_scene_switcher()
+	await _test_option_rows()
 	await _test_tutorial_ui()
 	await _test_practice()
 	await _test_bot_nights(games)
@@ -69,12 +70,61 @@ func _test_scene_switcher() -> void:
 	tree.current_scene = self
 
 
+## Option rows by controller: left and right move between panels until A is
+## pressed on a row; then they change its value, and A again finishes.
+func _test_option_rows() -> void:
+	var tree := get_tree()
+	Session.start_solo(5)
+	var lobby: Node = (load("res://game/ui/lobby.tscn") as PackedScene).instantiate()
+	tree.root.add_child(lobby)
+	for i in 3:
+		await tree.process_frame
+	var row: LGCycler = lobby._cyclers["night_minutes"]
+	var before: Variant = row.value()
+	row.grab_focus()
+	await tree.process_frame
+	await _press("ui_left")
+	var owner := get_viewport().gui_get_focus_owner()
+	check(row.value() == before, "left on a row that isn't being edited keeps its value")
+	check(owner != null and owner != row and owner.get_global_rect().position.x < row.get_global_rect().position.x,
+		"left on a house rule moves focus to the left panel (focus on %s)" % [owner])
+	row.grab_focus()
+	await tree.process_frame
+	await _press("ui_accept")
+	check(row.editing, "A starts editing a row")
+	await _press("ui_right")
+	check(row.value() != before and get_viewport().gui_get_focus_owner() == row, "right while editing changes the value")
+	await _press("ui_accept")
+	check(not row.editing, "A again finishes editing")
+	lobby.free()
+	Session.leave()
+	check(not LGScenes.is_busy(), "a freed lobby doesn't react when the session ends")
+
+
+func _press(action: String) -> void:
+	for pressed in [true, false]:
+		var ev := InputEventAction.new()
+		ev.action = action
+		ev.pressed = pressed
+		Input.parse_input_event(ev)
+		Input.flush_buffered_events()
+		await get_tree().process_frame
+
+
 func _test_join_codes() -> void:
 	for case in [["192.168.1.23", 24680], ["10.0.0.5", 24680], ["172.16.4.200", 31000]]:
 		var code := JoinCode.encode(case[0], case[1], 24680)
 		var back := JoinCode.decode(JoinCode.pretty(code).to_lower(), 24680)
 		check(back.get("ip") == case[0] and back.get("port") == case[1], "join code round trip %s" % [case])
 	check(JoinCode.decode("not a code!", 24680).is_empty(), "bad join code is rejected")
+	for case in [["192.168.0.1", 24680], ["8.8.8.8", 40000], ["255.255.255.255", 65535]]:
+		var code := JoinCode.encode(case[0], case[1], 24680)
+		for pair in [["0", "O"], ["1", "I"], ["2", "Z"], ["5", "S"], ["8", "B"]]:
+			code = code.replace(pair[0], pair[1])
+		var back := JoinCode.decode(code, 24680)
+		check(back.get("ip") == case[0] and back.get("port") == case[1], "a code typed with look-alike letters still works %s" % [case])
+	var short := JoinCode.encode("192.168.1.23", 24680, 24680)
+	check(JoinCode.decode(short.substr(0, short.length() - 1), 24680).is_empty(), "a code missing a character is rejected")
 
 
 func _test_roles() -> void:

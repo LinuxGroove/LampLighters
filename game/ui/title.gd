@@ -36,7 +36,9 @@ func _ready() -> void:
 	version.position = Vector2(-12, -8)
 	_ui.add_child(version)
 	_col = LGUi.centered_column(_ui, 560)
-	Session.status.connect(func(t): _status.text = t)
+	# Methods, not lambdas: a lambda stays connected to the autoload after this
+	# screen is freed and would keep running.
+	Session.status.connect(_on_status)
 	Session.hosts_found.connect(_on_hosts)
 	LGAudio.play_music("res://assets/kenney/audio/music/sad_descent.ogg", -6.0)
 	if str(LGSettings.get_value("player", "name")).strip_edges() == "":
@@ -45,6 +47,11 @@ func _ready() -> void:
 		_show_welcome()
 	else:
 		_show_main()
+
+
+func _on_status(text: String) -> void:
+	if _status and is_instance_valid(_status):
+		_status.text = text
 
 
 func _clear() -> void:
@@ -121,6 +128,21 @@ func _show_name(first_time: bool) -> void:
 	if not first_time:
 		_col.add_child(LGUi.button("Back", _show_main))
 	edit.grab_focus.call_deferred()
+
+
+## Shrinks the menu column to fit short screens, so every button stays on
+## screen (the title menu and settings are taller than some handhelds).
+func _process(_delta: float) -> void:
+	if _col == null:
+		return
+	var avail := get_viewport().get_visible_rect().size - Vector2(32, 48)
+	var need := _col.get_combined_minimum_size()
+	var s := 1.0
+	if need.y > 0.0 and need.x > 0.0:
+		s = clampf(minf(avail.y / need.y, avail.x / need.x), 0.5, 1.0)
+	if not is_equal_approx(_col.scale.x, s):
+		_col.scale = Vector2(s, s)
+	_col.pivot_offset = _col.size / 2.0
 
 
 ## Claims the screen for one action that leaves it; false if one is running.

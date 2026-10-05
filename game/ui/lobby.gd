@@ -25,6 +25,7 @@ var _start: Button
 var _add_bot: Button
 var _remove_bot: Button
 var _look: LGCycler
+var _preview: LookPreview
 
 
 func _ready() -> void:
@@ -80,7 +81,12 @@ func _ready() -> void:
 	var looks := []
 	for i in GameConfig.LOOKS.size():
 		looks.append([i, "Villager %d" % (i + 1)])
-	_look = LGCycler.make("Your look", looks, Session.player_look(), func(v): Session.set_look(v), 400)
+	_preview = LookPreview.make(Session.player_look(), Vector2(160, 190))
+	_preview.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	lcol.add_child(_preview)
+	_look = LGCycler.make("Your look", looks, Session.player_look(), func(v):
+		_preview.set_look(v)
+		Session.set_look(v), 400)
 	lcol.add_child(_look)
 	# House rules
 	var right := PanelContainer.new()
@@ -119,9 +125,12 @@ func _ready() -> void:
 	bottom.add_child(_start)
 	Session.roster_changed.connect(_refresh)
 	Session.settings_changed.connect(_refresh)
-	Session.status.connect(func(t): _status.text = t)
-	Session.left.connect(func(reason): LGScenes.change_scene("res://game/ui/title.tscn", func(n): n.set("message", reason)))
-	LGBrain.state_changed.connect(func(_s, _d): _refresh_ai())
+	# Methods, not lambdas: a lambda stays connected to the autoload after the
+	# lobby is freed, so an old lobby would still send everyone to the title
+	# screen when a later session ends.
+	Session.status.connect(_on_status)
+	Session.left.connect(_on_left)
+	LGBrain.state_changed.connect(_on_brain_state)
 	LGAudio.play_music("res://assets/kenney/audio/music/retro_mystic.ogg", -8.0)
 	_refresh()
 	_warm_up_ai()
@@ -129,6 +138,18 @@ func _ready() -> void:
 		_start.grab_focus.call_deferred()
 	else:
 		_look.grab_focus.call_deferred()
+
+
+func _on_status(text: String) -> void:
+	_status.text = text
+
+
+func _on_left(reason: String) -> void:
+	LGScenes.change_scene("res://game/ui/title.tscn", func(n): n.set("message", reason))
+
+
+func _on_brain_state(_state: String, _detail: String) -> void:
+	_refresh_ai()
 
 
 func _title_text() -> String:

@@ -9,6 +9,8 @@ const ON_OFF := [[true, "On"], [false, "Off"]]
 const AI_MODES := [["auto", "Automatic"], ["embedded", "Built-in only"], ["external", "Lemonade on this PC"], ["off", "Off (scripted bots)"]]
 const AI_MODELS := [["Qwen3-4B-Instruct-2507-GGUF", "Qwen3 4B (best talk)"], ["LFM2.5-1.2B-Instruct-GGUF", "LFM2.5 1.2B (lighter)"]]
 
+var _ai_state: Label
+
 
 func _ready() -> void:
 	add_theme_constant_override("separation", 8)
@@ -19,13 +21,14 @@ func _ready() -> void:
 	_row("Sounds", VOLUMES, "audio", "sfx")
 	_row("AI players", AI_MODES, "ai", "mode", func(_v): _restart_ai())
 	_row("AI model", AI_MODELS, "ai", "model", func(_v): _restart_ai())
-	var ai_state := LGUi.label("", "HintLabel")
-	ai_state.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	add_child(ai_state)
+	_ai_state = LGUi.label("", "HintLabel")
+	_ai_state.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	add_child(_ai_state)
 	var brain := get_node_or_null("/root/LGBrain")
 	if brain:
-		ai_state.text = _ai_text(brain.state, brain.detail)
-		brain.state_changed.connect(func(s, d): ai_state.text = _ai_text(s, d))
+		_ai_state.text = _ai_text(brain.state, brain.detail)
+		# A method, so the connection goes away with this panel.
+		brain.state_changed.connect(_on_brain_state)
 	_row("Online play", ON_OFF, "online", "enabled")
 	var server := LineEdit.new()
 	server.placeholder_text = "Game server address"
@@ -34,6 +37,10 @@ func _ready() -> void:
 	LGUi.gamepad_text_entry(server)
 	server.text_changed.connect(func(t): LGSettings.set_value("online", "host", t.strip_edges()))
 	add_child(server)
+
+
+func _on_brain_state(state: String, detail: String) -> void:
+	_ai_state.text = _ai_text(state, detail)
 
 
 func _row(label: String, options: Array, section: String, key: String, extra := Callable()) -> void:
