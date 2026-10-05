@@ -1,4 +1,4 @@
-# LampLighters
+# Lantern Out
 
 Keep the village lanterns lit until dawn. One of your friends is blowing them out.
 

@@ -2,7 +2,7 @@ class_name GameConfig
 extends RefCounted
 ## Game-wide constants: identity, version, input map and character looks.
 
-const GAME_ID := "lamplighters"
+const GAME_ID := "lantern-out"
 ## Bump PROTOCOL whenever network messages change; mismatched builds are told
 ## to update instead of desyncing.
 const PROTOCOL := 1
