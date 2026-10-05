@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="56%" r="50%">
+      <stop offset="0" stop-color="#ffd27a" stop-opacity="0.95"/>
+      <stop offset="0.45" stop-color="#f29b38" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#f29b38" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1b2347"/>
+      <stop offset="1" stop-color="#0a0d1c"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="48" fill="url(#sky)"/>
+  <circle cx="128" cy="146" r="110" fill="url(#glow)"/>
+  <!-- hook and handle -->
+  <path d="M128 30 v18" stroke="#3b2a1e" stroke-width="8" stroke-linecap="round"/>
+  <path d="M104 64 q24 -34 48 0" fill="none" stroke="#3b2a1e" stroke-width="8" stroke-linecap="round"/>
+  <!-- cap -->
+  <path d="M92 74 h72 l-10 -16 h-52 z" fill="#5b3a26"/>
+  <!-- glass -->
+  <rect x="96" y="74" width="64" height="96" rx="8" fill="#ffe7a8" stroke="#5b3a26" stroke-width="8"/>
+  <path d="M128 78 v88" stroke="#5b3a26" stroke-width="6"/>
+  <!-- flame -->
+  <path d="M128 98 q18 26 0 50 q-18 -24 0 -50z" fill="#f2862e"/>
+  <path d="M128 116 q8 13 0 26 q-8 -13 0 -26z" fill="#fff6d6"/>
+  <!-- base -->
+  <path d="M88 170 h80 l-8 18 h-64 z" fill="#5b3a26"/>
+</svg>

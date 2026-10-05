@@ -627,13 +627,6 @@ func _reveal() -> void:
 		if not b.bot:
 			_send_private(best)
 	meeting["result"] = res
-	if OS.get_environment("LO_DEBUG") != "":
-		var why := []
-		for v in meeting.votes:
-			if bots.has(v) and meeting.votes[v] != 0:
-				var b: BotBrain = bots[v]
-				why.append("%s->%s(k=%s s=%d llm=%d)" % [actors[v].name, actors[meeting.votes[v]].name, str(b.known.get(meeting.votes[v], "-")), int(b.suspicion.get(meeting.votes[v], 0)), b.llm_vote])
-		print("  meeting by %s (%s): banished %s %s | %s" % [actors[meeting.caller].name, meeting.reason, actors[best].name if best != 0 else "nobody", Rules.ROLE_NAMES[actors[best].role] if best != 0 else "", ", ".join(why)])
 	net.broadcast("_h_meeting_result", [res])
 	for bot in bots.values():
 		bot.learn_result(res)

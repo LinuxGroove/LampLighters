@@ -1,0 +1,3 @@
+#!/bin/sh
+# Starts the exported game with its data pack.
+exec "$SNAP/game/lantern-out.x86_64" --main-pack "$SNAP/game/lantern-out.pck" "$@"
