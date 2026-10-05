@@ -15,6 +15,7 @@ var uppercase_only := false
 var _grid: GridContainer
 var _shift := false
 var _letter_buttons: Array[Button] = []
+var _preview: Label
 
 
 static func open(p_target: LineEdit, p_uppercase_only := false) -> OnScreenKeyboard:
@@ -35,11 +36,32 @@ func _ready() -> void:
 	grow_vertical = Control.GROW_DIRECTION_BEGIN
 	position.y -= 24
 	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 8)
 	add_child(box)
+	# What is being typed is always shown here, on the keyboard itself, so it
+	# stays readable even when the keyboard sits over the text field.
+	var what := Label.new()
+	what.name = "What"
+	what.theme_type_variation = "HintLabel"
+	what.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	what.text = target.placeholder_text if target else ""
+	box.add_child(what)
+	var field := PanelContainer.new()
+	var field_box := StyleBoxFlat.new()
+	field_box.bg_color = Color(1, 1, 1, 0.92)
+	field_box.set_corner_radius_all(8)
+	field_box.set_content_margin_all(10)
+	field.add_theme_stylebox_override("panel", field_box)
+	box.add_child(field)
 	var preview := Label.new()
+	_preview = preview
 	preview.name = "Preview"
+	preview.theme_type_variation = "InkHeader"
 	preview.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	box.add_child(preview)
+	preview.custom_minimum_size.y = 44
+	preview.add_theme_font_override("font", ThemeDB.fallback_font)
+	preview.add_theme_font_size_override("font_size", 32)
+	field.add_child(preview)
 	_grid = GridContainer.new()
 	_grid.columns = 10
 	box.add_child(_grid)
@@ -59,12 +81,28 @@ func _ready() -> void:
 	_update_case()
 	_update_preview()
 	(_grid.get_child(10) as Button).grab_focus()
+	_keep_field_visible.call_deferred()
+
+
+## Moves the keyboard to the top of the screen when it would cover the field.
+func _keep_field_visible() -> void:
+	if target == null or not is_instance_valid(target) or not target.is_visible_in_tree():
+		return
+	var field := target.get_global_rect()
+	if field.end.y > get_global_rect().position.y:
+		set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+		grow_vertical = Control.GROW_DIRECTION_END
+		position.y += 24
 
 
 func _key(ch: String, cb: Callable) -> Button:
 	var b := Button.new()
 	b.text = ch
 	b.custom_minimum_size = Vector2(56, 52)
+	# The game fonts draw 0 and O (and 1 and I, 5 and S...) the same; the
+	# engine's own font keeps every key distinct.
+	b.add_theme_font_override("font", ThemeDB.fallback_font)
+	b.add_theme_font_size_override("font_size", 26)
 	b.pressed.connect(cb)
 	_grid.add_child(b)
 	return b
@@ -112,9 +150,8 @@ func _update_case() -> void:
 
 
 func _update_preview() -> void:
-	var preview := find_child("Preview") as Label
-	if preview and target:
-		preview.text = (target.text if target.text != "" else target.placeholder_text) + "_"
+	if _preview and target:
+		_preview.text = target.text + "_"
 
 
 func _close() -> void:

@@ -11,7 +11,7 @@ func _ready() -> void:
 	for i in range(1, args.size()):
 		if args[i] == "meeting":
 			meeting = true
-		elif args[i] in ["title", "lobby", "about", "howto", "practice"]:
+		elif args[i] in ["title", "lobby", "about", "howto", "practice", "settings", "keyboard", "lobby_edit", "welcome", "dark"]:
 			pass
 		else:
 			times.append(float(args[i]))
@@ -21,12 +21,33 @@ func _ready() -> void:
 	LGInput.extend_ui_actions()
 	LGTheme.apply(get_tree().root, 22)
 	LGSettings.set_value("player", "name", "Ken", false)
-	if "title" in args or "lobby" in args or "about" in args or "howto" in args:
+	if "welcome" not in args:
+		LGSettings.set_value("tutorial", "welcomed", true, false)
+		LGSettings.set_value("tutorial", "howto_seen", true, false)
+	var menus := ["title", "lobby", "about", "howto", "settings", "keyboard", "lobby_edit"]
+	if menus.any(func(m): return m in args):
 		get_tree().current_scene = null
-		if "lobby" in args:
+		var lobby: bool = "lobby" in args or "lobby_edit" in args
+		if lobby:
 			Session.start_solo(5)
-		LGScenes.change_scene("res://game/ui/%s.tscn" % ("lobby" if "lobby" in args else "title"))
+		LGScenes.change_scene("res://game/ui/%s.tscn" % ("lobby" if lobby else "title"))
 		await get_tree().create_timer(4.0).timeout
+		if "settings" in args:
+			get_tree().current_scene._show_settings()
+			await get_tree().create_timer(0.5).timeout
+		if "keyboard" in args:
+			get_tree().current_scene._show_name(false)
+			await get_tree().create_timer(0.3).timeout
+			var edit: LineEdit = get_tree().current_scene._col.find_children("*", "LineEdit", true, false)[0]
+			var kb := OnScreenKeyboard.open(edit, false)
+			for ch in "Ken 0O":
+				kb._type(ch)
+			await get_tree().create_timer(0.5).timeout
+		if "lobby_edit" in args:
+			var c: LGCycler = get_tree().current_scene._cyclers["night_minutes"]
+			c.grab_focus()
+			c.set_editing(true)
+			await get_tree().create_timer(0.3).timeout
 		if "about" in args:
 			get_tree().current_scene._show_about()
 			await get_tree().create_timer(0.5).timeout
@@ -54,10 +75,21 @@ func _ready() -> void:
 		Session.start_match()
 	var t := 0.0
 	var n := 0
+	if "dark" in args:
+		# Every other lantern out, to compare lit and dark ones.
+		await get_tree().create_timer(3.0).timeout
+		t = 3.0
+		var g: Game = get_tree().current_scene
+		for i in g.host.lit.size():
+			if i % 2 == 1:
+				g.host.lit[i] = false
+		g.host._send_lanterns()
+		g.hud.role_card.close()
 	if meeting:
 		await get_tree().create_timer(3.0).timeout
 		t = 3.0
 		var game: Game = get_tree().current_scene
+		game.hud.role_card.close()
 		game.host.time = 60.0
 		game.host._start_meeting(-1, "bell", {})
 		await get_tree().process_frame

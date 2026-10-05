@@ -11,6 +11,8 @@ var lit := true
 var _light: OmniLight3D
 var _glow: MeshInstance3D
 var _glow_mat: StandardMaterial3D
+var _halo: MeshInstance3D
+var _halo_mat: StandardMaterial3D
 var _flicker_left := 0.0
 var _base_energy := 1.8
 
@@ -39,6 +41,34 @@ func _ready() -> void:
 	_glow.position.y = light_height
 	_glow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(_glow)
+	# A soft halo that can be seen from across the village when lit, and a
+	# small cold-blue one when out, so lit and dark lanterns read at a glance.
+	var grad := Gradient.new()
+	grad.set_color(0, Color(1, 1, 1, 1))
+	grad.set_color(1, Color(1, 1, 1, 0))
+	grad.add_point(0.25, Color(1, 1, 1, 0.75))
+	var tex := GradientTexture2D.new()
+	tex.gradient = grad
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(1.0, 0.5)
+	tex.width = 64
+	tex.height = 64
+	_halo_mat = StandardMaterial3D.new()
+	_halo_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_halo_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_halo_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	_halo_mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	_halo_mat.billboard_keep_scale = true
+	_halo_mat.albedo_texture = tex
+	_halo = MeshInstance3D.new()
+	var quad := QuadMesh.new()
+	quad.size = Vector2.ONE
+	_halo.mesh = quad
+	_halo.material_override = _halo_mat
+	_halo.position.y = light_height
+	_halo.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(_halo)
 	_apply()
 
 
@@ -71,5 +101,7 @@ func _apply() -> void:
 		return
 	_light.light_color = light_color
 	_light.visible = lit
-	_glow_mat.albedo_color = Color(1.0, 0.85, 0.5) if lit else Color(0.15, 0.15, 0.18)
+	_glow_mat.albedo_color = Color(1.0, 0.85, 0.5) if lit else Color(0.25, 0.32, 0.5)
 	_glow_mat.emission_enabled = lit
+	_halo.scale = Vector3.ONE * (1.9 if lit else 0.7)
+	_halo_mat.albedo_color = Color(1.0, 0.7, 0.35, 0.85) if lit else Color(0.35, 0.5, 0.9, 0.55)

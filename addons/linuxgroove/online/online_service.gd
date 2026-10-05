@@ -13,7 +13,8 @@ extends Node
 
 signal status_changed(status: String)
 
-const CODE_ALPHABET := "BCDFGHJKLMNPQRSTVWXZ23456789"
+## No look-alikes in the Kenney fonts (0/O, 1/I/L, 2/Z, 5/S, 8/B).
+const CODE_ALPHABET := "CDFGHJKMNPQRTVWX34679"
 const CODE_LENGTH := 6
 
 var status := "offline"
