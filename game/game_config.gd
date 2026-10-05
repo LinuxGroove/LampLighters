@@ -25,6 +25,7 @@ const LOOK_COLORS := [
 const SETTING_DEFAULTS := {
 	"tutorial": {
 		"welcomed": false,
+		"howto_seen": false,
 		"role_card": true,
 		"hints": true,
 		"seen": "",

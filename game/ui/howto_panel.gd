@@ -1,7 +1,8 @@
 class_name HowToPanel
 extends Control
 ## "How to play": a few parchment pages on the goal, a night, meetings, winning,
-## roles and the controls. Opened from the title menu and the pause menu.
+## roles and the controls. Opened from the title menu and the pause menu, and
+## by itself at the start of a player's first game if they never opened it.
 
 signal closed
 
@@ -75,6 +76,7 @@ func _init() -> void:
 
 
 func open() -> void:
+	LGSettings.set_value("tutorial", "howto_seen", true)
 	_page = 0
 	visible = true
 	_show_page()

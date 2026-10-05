@@ -12,6 +12,9 @@ var _col: VBoxContainer
 var _status: Label
 var _hosts_box: VBoxContainer
 var _about_scroll: ScrollContainer
+## Set once a button has started leaving this screen (or a join is under
+## way), so a double press can't start a second session or scene change.
+var _leaving := false
 
 
 func _ready() -> void:
@@ -120,8 +123,17 @@ func _show_name(first_time: bool) -> void:
 	edit.grab_focus.call_deferred()
 
 
+## Claims the screen for one action that leaves it; false if one is running.
+func _claim() -> bool:
+	if _leaving or LGScenes.is_busy():
+		return false
+	_leaving = true
+	return true
+
+
 func _play_practice() -> void:
-	Session.start_practice()
+	if _claim():
+		Session.start_practice()
 
 
 ## The pages open over the menu, which hides so focus stays on the pages.
@@ -141,26 +153,32 @@ func _show_welcome() -> void:
 	LGSettings.set_value("tutorial", "welcomed", true)
 	_clear()
 	_add_title()
-	var l := LGUi.label("New here? A quick tour explains the goal, and the practice round lets you try everything with no pressure.", "HintLabel")
+	var l := LGUi.label("New here? Start with how to play: a few pages on the goal and the controls. Then try the practice round, with no pressure.", "HintLabel")
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_col.add_child(l)
-	_col.add_child(LGUi.button("Practice round", _play_practice))
 	_col.add_child(LGUi.button("How to play", func():
 		_show_main()
 		_show_howto()))
+	_col.add_child(LGUi.button("Practice round", _play_practice))
 	_col.add_child(LGUi.button("Not now", _show_main))
 	LGUi.focus_first(_col)
 
 
 func _play_solo() -> void:
+	if not _claim():
+		return
 	Session.start_solo(5)
 	LGScenes.change_scene(LOBBY)
 
 
 func _host_lan() -> void:
+	if not _claim():
+		return
 	if Session.host_lan():
 		LGScenes.change_scene(LOBBY)
+	else:
+		_leaving = false
 
 
 func _show_join() -> void:
@@ -178,8 +196,12 @@ func _show_join() -> void:
 	LGUi.gamepad_text_entry(code, true)
 	_col.add_child(code)
 	var join := func():
+		if not _claim():
+			return
 		if Session.join_lan_code(code.text):
 			_wait_for_join()
+		else:
+			_leaving = false
 	code.text_submitted.connect(func(_t): join.call())
 	_col.add_child(LGUi.button("Join with code", join))
 	_col.add_child(LGUi.button("Back", func():
@@ -202,8 +224,12 @@ func _on_hosts(hosts: Array) -> void:
 		var playing := str(h.get("state", "lobby")) != "lobby"
 		var text := "%s  (%d/%d)%s" % [h.get("name", "A village"), int(h.get("players", 0)), int(h.get("max", 10)), "  playing" if playing else ""]
 		var b := LGUi.button(text, func():
+			if not _claim():
+				return
 			if Session.join_lan(str(h.address), int(h.get("port", LGSettings.get_value("lan", "port")))):
-				_wait_for_join())
+				_wait_for_join()
+			else:
+				_leaving = false)
 		b.disabled = playing or int(h.get("protocol", 0)) != GameConfig.PROTOCOL
 		_hosts_box.add_child(b)
 
@@ -214,6 +240,7 @@ func _wait_for_join() -> void:
 	if result[0] == "joined":
 		LGScenes.change_scene(LOBBY)
 	else:
+		_leaving = false
 		_status.text = str(result[1]) if str(result[1]) != "" else "Couldn't join."
 
 
@@ -250,9 +277,13 @@ func _show_online() -> void:
 	info2.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_col.add_child(info2)
 	_col.add_child(LGUi.button("Host an online room", func():
+		if not _claim():
+			return
 		_status.text = "Connecting..."
 		if await Session.host_online():
-			LGScenes.change_scene(LOBBY)))
+			LGScenes.change_scene(LOBBY)
+		else:
+			_leaving = false))
 	var code := LineEdit.new()
 	code.placeholder_text = "Room code"
 	code.max_length = 8
@@ -260,9 +291,13 @@ func _show_online() -> void:
 	LGUi.gamepad_text_entry(code, true)
 	_col.add_child(code)
 	_col.add_child(LGUi.button("Join with code", func():
+		if not _claim():
+			return
 		_status.text = "Connecting..."
 		if await Session.join_online(code.text):
-			_wait_for_join()))
+			_wait_for_join()
+		else:
+			_leaving = false))
 	_col.add_child(LGUi.button("Back", _show_main))
 	_add_status()
 	LGUi.focus_first(_col)

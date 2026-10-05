@@ -18,6 +18,7 @@ func _ready() -> void:
 	_test_roles()
 	_test_chores()
 	_test_quick_chat()
+	await _test_scene_switcher()
 	await _test_tutorial_ui()
 	await _test_practice()
 	await _test_bot_nights(games)
@@ -30,6 +31,42 @@ func check(ok: bool, what: String) -> void:
 	if not ok:
 		failures += 1
 		printerr("FAIL: ", what)
+
+
+## A burst of scene changes (a double press, or a return to the lobby right
+## before a new match) must leave exactly one scene, the last one asked for.
+func _test_scene_switcher() -> void:
+	var tree := get_tree()
+	await tree.process_frame
+	var placeholder := Node.new()
+	placeholder.name = "Placeholder"
+	tree.root.add_child(placeholder)
+	tree.current_scene = placeholder
+	var made := []
+	for n in ["SceneA", "SceneB", "SceneC"]:
+		var node := Node.new()
+		node.name = n
+		var packed := PackedScene.new()
+		packed.pack(node)
+		node.free()
+		made.append(packed)
+	LGScenes.change_scene(made[0])
+	LGScenes.change_scene(made[1])
+	LGScenes.change_scene(made[2])
+	var waited := 0
+	while (LGScenes.is_busy() or tree.current_scene == placeholder) and waited < 300:
+		await tree.process_frame
+		waited += 1
+	await tree.process_frame
+	var found := []
+	for c in tree.root.get_children():
+		if str(c.name).begins_with("Scene") or c.name == "Placeholder":
+			found.append(str(c.name))
+	check(found == ["SceneC"], "a burst of scene changes leaves only the last scene (got %s)" % [found])
+	for c in tree.root.get_children():
+		if str(c.name).begins_with("Scene"):
+			c.free()
+	tree.current_scene = self
 
 
 func _test_join_codes() -> void:

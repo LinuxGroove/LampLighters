@@ -7,6 +7,7 @@ const FADE_TIME := 0.25
 
 var _rect: ColorRect
 var _busy := false
+var _pending: Array = []
 
 
 func _ready() -> void:
@@ -21,10 +22,28 @@ func _ready() -> void:
 
 ## Replaces the current scene. `setup` (optional) is called with the new
 ## scene's root before it enters the tree, so callers can pass data in.
+##
+## Requests made while a change is running are queued, and only the newest
+## one runs: a double press or a burst of network messages never leaves two
+## scenes in the tree at once.
 func change_scene(path_or_packed: Variant, setup := Callable()) -> void:
 	if _busy:
-		await scene_changed
+		_pending = [path_or_packed, setup]
+		return
 	_busy = true
+	var next := [path_or_packed, setup]
+	while not next.is_empty():
+		await _swap(next[0], next[1])
+		next = _pending
+		_pending = []
+	_busy = false
+
+
+func is_busy() -> bool:
+	return _busy
+
+
+func _swap(path_or_packed: Variant, setup: Callable) -> void:
 	var packed: PackedScene = path_or_packed if path_or_packed is PackedScene else load(path_or_packed)
 	await _fade(1.0)
 	var tree := get_tree()
@@ -38,7 +57,6 @@ func change_scene(path_or_packed: Variant, setup := Callable()) -> void:
 	tree.root.add_child(node)
 	tree.current_scene = node
 	await _fade(0.0)
-	_busy = false
 	scene_changed.emit(node)
 
 

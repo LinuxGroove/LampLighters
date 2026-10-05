@@ -207,14 +207,25 @@ func _on_intro() -> void:
 			names.append(game.player_name(a))
 		hint += "\nYour fellow Hollow: %s." % ", ".join(names)
 	_role_hint.text = hint
+	# A new player who skipped "How to play" on the title screen gets it here
+	# first, then their role.
+	if not bool(LGSettings.get_value("tutorial", "howto_seen", false)):
+		howto.closed.connect(_introduce_role.bind(hint), CONNECT_ONE_SHOT)
+		howto.open()
+	else:
+		_introduce_role(hint)
+	_refresh_top()
+	_refresh_chores()
+
+
+func _introduce_role(hint: String) -> void:
+	var role: int = game.role
 	if practice:
 		show_banner("Practice round", "There is no Hollow and no clock here. Follow the guide at the top of the screen.", 8.0)
 	elif bool(LGSettings.get_value("tutorial", "role_card", true)):
 		show_role_card()
 	else:
 		show_banner("You are %s %s" % ["the" if role != Rules.Role.LAMPLIGHTER else "a", Rules.ROLE_NAMES[role]], hint, 7.0)
-	_refresh_top()
-	_refresh_chores()
 
 
 func show_role_card() -> void:

@@ -258,7 +258,8 @@ func start_match() -> void:
 
 ## Host: deals a fresh match with the same players.
 func restart_match() -> void:
-	if is_host():
+	# A double press on "Play again" would deal two matches back to back.
+	if is_host() and not LGScenes.is_busy():
 		in_match = false
 		start_match()
 
@@ -291,7 +292,7 @@ func report_round(result: Dictionary) -> void:
 
 ## Host: everyone goes back to the lobby after a match.
 func return_to_lobby() -> void:
-	if not is_host():
+	if not is_host() or not in_match or LGScenes.is_busy():
 		return
 	_beacon.update_info({"state": "lobby"})
 	for peer_id in multiplayer.get_peers():
