@@ -82,7 +82,7 @@ static func build(base_size := 22) -> Theme:
 	t.set_stylebox("pressed", "Button", pressed)
 	t.set_stylebox("hover_pressed", "Button", pressed)
 	t.set_stylebox("disabled", "Button", disabled)
-	t.set_stylebox("focus", "Button", _focus_box())
+	t.set_stylebox("focus", "Button", _focus_fill_box())
 	t.set_font("font", "Button", heading_font)
 	t.set_font_size("font_size", "Button", base_size)
 	# The button texture is light, so button text is ink.
@@ -204,6 +204,16 @@ static func build(base_size := 22) -> Theme:
 	t.set_font_size("normal_font_size", "RichTextLabel", base_size)
 	t.set_font_size("bold_font_size", "RichTextLabel", base_size)
 	return t
+
+
+## Button focus: a tinted fill plus a thick border, readable on light buttons.
+static func _focus_fill_box() -> StyleBoxFlat:
+	var box := _focus_box()
+	box.draw_center = true
+	box.bg_color = Color(FOCUS, 0.4)
+	box.set_border_width_all(6)
+	box.set_expand_margin_all(6)
+	return box
 
 
 static func _focus_box() -> StyleBoxFlat:

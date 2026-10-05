@@ -167,6 +167,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _build_cards(alive: Array) -> void:
 	for c in _cards.get_children():
+		_cards.remove_child(c)
 		c.queue_free()
 	_card_buttons.clear()
 	var ids: Array = game.roster.keys()
@@ -292,6 +293,7 @@ func _pick_place(title: String, cb: Callable) -> void:
 func _open_picker(title: String, items: Array, cb: Callable) -> void:
 	_last_focus = get_viewport().gui_get_focus_owner()
 	for c in _picker_grid.get_children():
+		_picker_grid.remove_child(c)
 		c.queue_free()
 	_picker_title.text = title
 	for item in items:
