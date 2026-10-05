@@ -43,7 +43,10 @@ func _ready() -> void:
 
 
 func _clear() -> void:
+	# Detach before freeing: queue_free alone leaves the old buttons in the tree
+	# until frame end, so focus_first would grab one that is about to vanish.
 	for c in _col.get_children():
+		_col.remove_child(c)
 		c.queue_free()
 	_hosts_box = null
 	_about_scroll = null
