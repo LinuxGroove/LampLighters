@@ -127,7 +127,9 @@ func _process(delta: float) -> void:
 			if Input.is_action_pressed("interact"):
 				progress = minf(1.0, progress + delta / _hold_time)
 		"mash":
-			progress = maxf(0.0, progress - delta * 0.18)
+			# A full bar waits out the minimum time instead of draining back.
+			if progress < 1.0:
+				progress = maxf(0.0, progress - delta * 0.18)
 		"timing":
 			_marker = (sin(_elapsed * 2.8) + 1.0) * 0.5
 			_track.queue_redraw()

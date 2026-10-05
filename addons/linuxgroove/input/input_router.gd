@@ -51,8 +51,14 @@ const STICK_GLYPHS := {
 	"right": {"xbox": "xbox_stick_r", "playstation": "playstation_stick_r", "switch": "switch_stick_r", "steamdeck": "steamdeck_stick_r"},
 }
 
+## One physical D-pad press can arrive as both a button and a stick axis
+## (common on handhelds and some pads), which would move menu focus twice.
+const NAV_ACTIONS := ["ui_up", "ui_down", "ui_left", "ui_right"]
+const NAV_DEBOUNCE_MSEC := 90
+
 var family := "keyboard"
 var _glyph_cache := {}
+var _last_nav := {}
 
 
 func _ready() -> void:
@@ -181,8 +187,17 @@ func family_for_joypad(device: int) -> String:
 
 
 func _input(event: InputEvent) -> void:
+	if not event.is_echo():
+		for a in NAV_ACTIONS:
+			if event.is_action_pressed(a):
+				var now := Time.get_ticks_msec()
+				if now - int(_last_nav.get(a, -1000)) < NAV_DEBOUNCE_MSEC:
+					get_viewport().set_input_as_handled()
+					return
+				_last_nav[a] = now
 	var next := family
-	if event is InputEventKey or event is InputEventMouseButton:
+	var has_pad := Input.get_connected_joypads().size() > 0
+	if event is InputEventKey or (event is InputEventMouseButton and not has_pad):
 		next = "keyboard"
 	elif event is InputEventJoypadButton:
 		next = family_for_joypad(event.device)
@@ -194,8 +209,13 @@ func _input(event: InputEvent) -> void:
 
 
 func _on_joy_connection_changed(device: int, connected: bool) -> void:
+	var next := family
 	if connected and family == "keyboard":
-		family = family_for_joypad(device)
+		next = family_for_joypad(device)
+	elif not connected and Input.get_connected_joypads().is_empty():
+		next = "keyboard"
+	if next != family:
+		family = next
 		device_changed.emit(family)
 
 

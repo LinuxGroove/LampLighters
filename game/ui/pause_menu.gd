@@ -40,11 +40,13 @@ func setup(p_game: Game) -> void:
 func open() -> void:
 	visible = true
 	var lines := []
-	for pair in [["move_up", "Move (stick or WASD)"], ["interact", "Relight, do a chore, report"],
+	var pad := LGInput.is_gamepad()
+	for pair in [["move_up", "Move"], ["interact", "Relight, do a chore, report"],
 			["special", "Hollow: snuff or take. Seer: look closely. Ghost: flicker"],
 			["ring_bell", "Ring the bell at the square"], ["show_map", "Map"],
-			["emote_1", "Emotes (D-pad or 1-4)"], ["pause", "Pause"]]:
-		lines.append("%s   %s" % [LGInput.label_for_action(pair[0]), pair[1]])
+			["emote_1", "Emotes"], ["pause", "Pause"]]:
+		var key: String = "Left stick" if pad and pair[0] == "move_up" else ("D-pad" if pad and pair[0] == "emote_1" else ("WASD" if pair[0] == "move_up" else ("1-4" if pair[0] == "emote_1" else LGInput.label_for_action(pair[0]))))
+		lines.append("%s   %s" % [key, pair[1]])
 	_help.text = "\n".join(lines)
 	LGUi.focus_first(_col)
 
