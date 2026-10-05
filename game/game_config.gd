@@ -21,6 +21,16 @@ const LOOK_COLORS := [
 	Color("c9d65a"), Color("8f9be8"), Color("d0a070"), Color("9ad0f0"),
 ]
 
+## Per-player tutorial state. `seen` lists the one-time hints already shown.
+const SETTING_DEFAULTS := {
+	"tutorial": {
+		"welcomed": false,
+		"role_card": true,
+		"hints": true,
+		"seen": "",
+	},
+}
+
 const BOT_NAMES := [
 	"Ada", "Bram", "Clem", "Dot", "Edda", "Fenn", "Gus", "Hettie", "Ivo", "Juno",
 	"Kit", "Lark", "Mabel", "Ned", "Odile", "Pip", "Quill", "Rosa", "Sol", "Tamsin",

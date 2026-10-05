@@ -31,6 +31,8 @@ var match_config := {}
 ## Host: peers whose game scene is ready, so match messages can reach them.
 var loaded_peers := {}
 var rounds_played := 0
+## The next match is a practice round (see MatchHost.practice).
+var practice := false
 
 var _beacon: LanBeacon
 var _pending_hello := {}
@@ -76,6 +78,13 @@ func start_solo(bots := 5) -> void:
 		add_bot()
 	joined.emit()
 	roster_changed.emit()
+
+
+## A guided practice round: just you and a few bots standing by.
+func start_practice() -> void:
+	start_solo(3)
+	practice = true
+	start_match()
 
 
 func host_lan() -> bool:
@@ -177,6 +186,7 @@ func leave(reason := "") -> void:
 	match_config = {}
 	loaded_peers.clear()
 	rounds_played = 0
+	practice = false
 	_pending_hello.clear()
 	if was != Mode.NONE:
 		left.emit(reason)
@@ -237,6 +247,7 @@ func start_match() -> void:
 		"players": players.duplicate(true),
 		"settings": settings.duplicate(),
 		"map": "res://game/world/moonpatch_village.tscn",
+		"practice": practice,
 	}
 	_beacon.update_info({"state": "playing"})
 	loaded_peers.clear()

@@ -11,6 +11,11 @@ var meeting: MeetingPanel
 var map: MapPanel
 var pause: PauseMenu
 var end: EndPanel
+var howto: HowToPanel
+var role_card: RoleCard
+var guide: PracticeGuide
+var hints: Hints
+var practice := false
 
 var _top: PanelContainer
 var _time_label: Label
@@ -33,10 +38,14 @@ var _banner_title: Label
 var _banner_text: Label
 var _banner_t := 0.0
 var _waiting: Label
+var _hint: PanelContainer
+var _hint_row: HBoxContainer
+var _hint_t := 0.0
 
 
 func setup(p_game: Game) -> void:
 	game = p_game
+	practice = bool(game.config.get("practice", false))
 	layer = 10
 	root = Control.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -67,6 +76,21 @@ func setup(p_game: Game) -> void:
 	pause = PauseMenu.new()
 	root.add_child(pause)
 	pause.setup(game)
+	howto = HowToPanel.new()
+	root.add_child(howto)
+	role_card = RoleCard.new()
+	root.add_child(role_card)
+	_build_hint()
+	if practice:
+		_time_label.visible = false
+		_toast.position.y = 170
+		guide = PracticeGuide.new()
+		add_child(guide)
+		guide.setup(game, self)
+	else:
+		hints = Hints.new()
+		add_child(hints)
+		hints.setup(game, self)
 	_set_playing_visible(false)
 	game.intro_received.connect(_on_intro)
 	game.private_changed.connect(_refresh_chores)
@@ -79,7 +103,8 @@ func setup(p_game: Game) -> void:
 
 
 func blocks_input() -> bool:
-	return chore_game.visible or meeting.visible or map.visible or pause.visible or end.visible
+	return chore_game.visible or meeting.visible or map.visible or pause.visible or end.visible \
+			or howto.visible or role_card.visible or (guide != null and guide.blocking())
 
 
 func open_chore(chore: Dictionary, on_done: Callable) -> void:
@@ -95,6 +120,19 @@ func show_toast(text: String) -> void:
 	_toast.modulate.a = 1.0
 	_toast.visible = true
 	_toast_t = 3.0
+
+
+## A one-time tip near the top of the screen, with the button glyph if `action` is set.
+func show_hint(text: String, action := "", seconds := 9.0) -> void:
+	for c in _hint_row.get_children():
+		_hint_row.remove_child(c)
+		c.queue_free()
+	if action != "":
+		_hint_row.add_child(ActionPrompt.make(action, text, 36))
+	else:
+		_hint_row.add_child(LGUi.label(text))
+	_hint.visible = true
+	_hint_t = seconds
 
 
 func show_banner(title: String, text: String, seconds := 6.0) -> void:
@@ -115,6 +153,11 @@ func _process(delta: float) -> void:
 		_toast.modulate.a = clampf(_toast_t, 0.0, 1.0)
 		if _toast_t <= 0.0:
 			_toast.visible = false
+	if _hint_t > 0.0:
+		_hint_t -= delta
+		if _hint_t <= 0.0 or blocks_input():
+			_hint.visible = false
+			_hint_t = 0.0
 	if _banner_t > 0.0:
 		_banner_t -= delta
 		if _banner_t <= 0.0:
@@ -124,6 +167,8 @@ func _process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if end.visible or game.phase == Rules.Phase.LOADING:
+		return
+	if howto.visible or role_card.visible or (guide != null and guide.blocking()):
 		return
 	if pause.visible:
 		if event.is_action_pressed("pause") or event.is_action_pressed("cancel"):
@@ -162,9 +207,21 @@ func _on_intro() -> void:
 			names.append(game.player_name(a))
 		hint += "\nYour fellow Hollow: %s." % ", ".join(names)
 	_role_hint.text = hint
-	show_banner("You are %s %s" % ["the" if role != Rules.Role.LAMPLIGHTER else "a", Rules.ROLE_NAMES[role]], hint, 7.0)
+	if practice:
+		show_banner("Practice round", "There is no Hollow and no clock here. Follow the guide at the top of the screen.", 8.0)
+	elif bool(LGSettings.get_value("tutorial", "role_card", true)):
+		show_role_card()
+	else:
+		show_banner("You are %s %s" % ["the" if role != Rules.Role.LAMPLIGHTER else "a", Rules.ROLE_NAMES[role]], hint, 7.0)
 	_refresh_top()
 	_refresh_chores()
+
+
+func show_role_card() -> void:
+	var names := []
+	for a in game.allies:
+		names.append(game.player_name(a))
+	role_card.show_role(game.role, names)
 
 
 func _set_playing_visible(on: bool) -> void:
@@ -284,6 +341,18 @@ func _build_prompts() -> void:
 				_prompt_x = prompt
 			"y":
 				_prompt_y = prompt
+
+
+func _build_hint() -> void:
+	_hint = PanelContainer.new()
+	_hint.theme_type_variation = "GlassPanel"
+	_hint.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	_hint.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_hint.position.y = 150 if not practice else 230
+	_hint.visible = false
+	root.add_child(_hint)
+	_hint_row = HBoxContainer.new()
+	_hint.add_child(_hint_row)
 
 
 func _build_toast_and_banner() -> void:

@@ -38,6 +38,8 @@ func _ready() -> void:
 	LGAudio.play_music("res://assets/kenney/audio/music/sad_descent.ogg", -6.0)
 	if str(LGSettings.get_value("player", "name")).strip_edges() == "":
 		_show_name(true)
+	elif not bool(LGSettings.get_value("tutorial", "welcomed", false)):
+		_show_welcome()
 	else:
 		_show_main()
 
@@ -72,6 +74,8 @@ func _add_status(text := "") -> void:
 func _show_main() -> void:
 	_clear()
 	_add_title()
+	_col.add_child(LGUi.button("Practice round", _play_practice))
+	_col.add_child(LGUi.button("How to play", _show_howto))
 	_col.add_child(LGUi.button("Play with bots", _play_solo))
 	_col.add_child(LGUi.button("Host on this network", _host_lan))
 	_col.add_child(LGUi.button("Join on this network", _show_join))
@@ -105,12 +109,48 @@ func _show_name(first_time: bool) -> void:
 		LGSettings.set_value("player", "name", n)
 		if first_time:
 			LGSettings.set_value("player", "look", randi() % GameConfig.LOOKS.size())
-		_show_main()
+		if not bool(LGSettings.get_value("tutorial", "welcomed", false)):
+			_show_welcome()
+		else:
+			_show_main()
 	edit.text_submitted.connect(func(_t): save.call())
 	_col.add_child(LGUi.button("OK", save))
 	if not first_time:
 		_col.add_child(LGUi.button("Back", _show_main))
 	edit.grab_focus.call_deferred()
+
+
+func _play_practice() -> void:
+	Session.start_practice()
+
+
+## The pages open over the menu, which hides so focus stays on the pages.
+func _show_howto() -> void:
+	_col.visible = false
+	var panel := HowToPanel.new()
+	_ui.add_child(panel)
+	panel.closed.connect(func():
+		panel.queue_free()
+		_col.visible = true
+		LGUi.focus_first(_col))
+	panel.open()
+
+
+## Shown once the first time the menu appears: offers the tour and practice.
+func _show_welcome() -> void:
+	LGSettings.set_value("tutorial", "welcomed", true)
+	_clear()
+	_add_title()
+	var l := LGUi.label("New here? A quick tour explains the goal, and the practice round lets you try everything with no pressure.", "HintLabel")
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_col.add_child(l)
+	_col.add_child(LGUi.button("Practice round", _play_practice))
+	_col.add_child(LGUi.button("How to play", func():
+		_show_main()
+		_show_howto()))
+	_col.add_child(LGUi.button("Not now", _show_main))
+	LGUi.focus_first(_col)
 
 
 func _play_solo() -> void:
@@ -233,6 +273,11 @@ func _show_settings() -> void:
 	_col.add_child(LGUi.label("Settings", "HeaderMedium"))
 	var panel := SettingsPanel.new()
 	_col.add_child(panel)
+	for row in [["Role card at start", "role_card"], ["Tips during play", "hints"]]:
+		var key: String = row[1]
+		var c := LGCycler.make(row[0], SettingsPanel.ON_OFF, LGSettings.get_value("tutorial", key, true), func(v):
+			LGSettings.set_value("tutorial", key, v))
+		panel.add_child(c)
 	_col.add_child(LGUi.button("Back", _show_main))
 	LGUi.focus_first(_col)
 

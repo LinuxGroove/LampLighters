@@ -36,6 +36,9 @@ var chores_done := 0
 var result := {}
 ## Counts for the end screen and for balancing.
 var stats := {"takes": 0, "snuffs": 0, "relights": 0, "meetings": 0, "banished_hollow": 0, "banished_village": 0}
+## A practice round: no Hollow, no dawn, bots stand still and every lantern
+## starts lit but one, so a new player can learn the controls.
+var practice := false
 var bots := {}  # id -> BotBrain
 var talk: BotTalk
 
@@ -52,10 +55,17 @@ func setup(config: Dictionary, p_net: Node, p_village: Village) -> void:
 	rng.seed = int(config.get("seed", 1))
 	settings = Rules.DEFAULT_SETTINGS.duplicate()
 	settings.merge(config.get("settings", {}), true)
+	practice = bool(config.get("practice", false))
+	if practice:
+		settings.discussion_seconds = 20
+		settings.vote_seconds = 20
 	var players: Dictionary = config.players
 	var ids := players.keys()
 	ids.sort()
 	var roles := Rules.deal_roles(ids, settings, rng)
+	if practice:
+		for id in ids:
+			roles[id] = Rules.Role.LAMPLIGHTER
 	var spawns := village.spawn_points()
 	for i in ids.size():
 		var id: int = ids[i]
@@ -77,7 +87,8 @@ func setup(config: Dictionary, p_net: Node, p_village: Village) -> void:
 
 func _new_actor(id: int, p: Dictionary, role: int, spawn: Vector3) -> Dictionary:
 	var chores := []
-	for key in Rules.deal_chores(int(settings.chores_each), rng):
+	var keys: Array = Rules.PRACTICE_CHORES if practice else Rules.deal_chores(int(settings.chores_each), rng)
+	for key in keys:
 		chores.append({"key": key, "step": 0, "done": false})
 	return {
 		"id": id, "name": str(p.get("name", "?")), "look": int(p.get("look", 0)),
@@ -86,7 +97,7 @@ func _new_actor(id: int, p: Dictionary, role: int, spawn: Vector3) -> Dictionary
 		"pos": spawn, "yaw": 0.0, "anim": Rules.Anim.IDLE, "carry": "",
 		"chores": chores, "action": {},
 		"snuff_ready": Rules.FIRST_COOLDOWN, "take_ready": Rules.FIRST_COOLDOWN,
-		"bell_left": int(settings.bell_uses), "bell_ready": Rules.BELL_COOLDOWN,
+		"bell_left": int(settings.bell_uses), "bell_ready": 0.0 if practice else Rules.BELL_COOLDOWN,
 		"seer_used": false, "flicker_used": false,
 		"state_t": 0.0, "print_pos": spawn, "taken_by": 0,
 	}
@@ -104,9 +115,10 @@ func _process(delta: float) -> void:
 			return
 		Rules.Phase.NIGHT:
 			time += delta
-			night_left -= delta
-			for bot in bots.values():
-				bot.tick(delta)
+			if not practice:
+				night_left -= delta
+				for bot in bots.values():
+					bot.tick(delta)
 			_update_prints()
 			_check_win()
 		Rules.Phase.MEETING:
@@ -128,11 +140,27 @@ func _begin(missing: Array) -> void:
 	for id in missing:
 		on_player_left(id)
 	phase = Rules.Phase.NIGHT
+	if practice:
+		_darken_nearest_lantern()
 	for id in _humans:
 		if not actors[id].out:
 			net.send(id, "_h_intro", [_intro_for(id)])
 	_send_lanterns()
 	_send_status()
+
+
+## Practice: puts out the lantern closest to the first human, to relight.
+func _darken_nearest_lantern() -> void:
+	var from := Vector3.ZERO
+	for id in _humans:
+		from = actors[id].pos
+		break
+	var best := -1
+	for i in lit.size():
+		if best < 0 or _flat_dist(lantern_pos[i], from) < _flat_dist(lantern_pos[best], from):
+			best = i
+	if best >= 0:
+		lit[best] = false
 
 
 func _intro_for(id: int) -> Dictionary:
@@ -656,6 +684,8 @@ func _end_meeting() -> void:
 func _check_win() -> bool:
 	if phase == Rules.Phase.ENDED:
 		return true
+	if practice:
+		return false
 	var hollow := 0
 	var village_alive := 0
 	for a in actors.values():

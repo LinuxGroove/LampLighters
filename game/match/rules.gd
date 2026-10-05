@@ -22,6 +22,34 @@ const ROLE_BLURBS := {
 	Role.WATCHMAN: "You see fresh footprints in the dark for a few seconds after someone passes.",
 }
 
+## The role card shown at the start of a match: a one-line goal, what each
+## button does for this role ([action, text]) and a tip.
+const ROLE_CARDS := {
+	Role.LAMPLIGHTER: {
+		"goal": "Keep the lanterns lit and finish your chores before dawn. One of the villagers is secretly Hollow: find them and vote them out.",
+		"abilities": [["interact", "Relight a dark lantern, do a chore, or report what you find"], ["ring_bell", "Ring the bell in the square to call a meeting"]],
+		"tip": "Chores need a lit lantern nearby. Stay in the light, and stay together.",
+	},
+	Role.HOLLOW: {
+		"goal": "Put out the lanterns and take villagers where nobody can see. Blend in, and don't get voted out.",
+		"abilities": [["special", "Snuff a lit lantern, or take a villager standing in the dark"], ["interact", "Do chores to look busy"]],
+		"tip": "Both abilities need a cooldown. Slip away from the group, and never act where you can be seen.",
+	},
+	Role.SEER: {
+		"goal": "Keep the lanterns lit and finish your chores. Once tonight you can look closely at a villager to learn if they are Hollow.",
+		"abilities": [["special", "Look closely at a villager next to you, once"], ["interact", "Relight, do chores, report"]],
+		"tip": "Choose carefully, and be careful how you share it. The Hollow would love to take you.",
+	},
+	Role.WATCHMAN: {
+		"goal": "Keep the lanterns lit and finish your chores. You can see fresh footprints in the dark for a few seconds after someone passes.",
+		"abilities": [["interact", "Relight, do chores, report"], ["ring_bell", "Ring the bell in the square to call a meeting"]],
+		"tip": "Footprints show where someone just walked, so they can tell you who was where.",
+	},
+}
+
+## Chores in the practice round: one of each kind of minigame.
+const PRACTICE_CHORES := ["animals", "water", "fence", "candles"]
+
 const SKIP_VOTE := 0
 
 # Distances (metres)

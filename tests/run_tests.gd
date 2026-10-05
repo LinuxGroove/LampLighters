@@ -18,6 +18,8 @@ func _ready() -> void:
 	_test_roles()
 	_test_chores()
 	_test_quick_chat()
+	await _test_tutorial_ui()
+	await _test_practice()
 	await _test_bot_nights(games)
 	print("\n%d checks, %d failed" % [checks, failures])
 	get_tree().quit(1 if failures > 0 else 0)
@@ -135,3 +137,115 @@ func _test_bot_nights(games: int) -> void:
 		await get_tree().process_frame
 		Session.leave()
 	print("village %d, Hollow %d" % [wins[Rules.Team.VILLAGE], wins[Rules.Team.HOLLOW]])
+
+
+## The practice round: everyone is a Lamplighter, one lantern starts dark, the
+## night never ends, and a bell meeting runs its course and hands back the night.
+func _test_practice() -> void:
+	await get_tree().process_frame
+	Session.start_solo(0)
+	var players := {}
+	for i in 4:
+		players[1 if i == 0 else -i] = {"name": GameConfig.BOT_NAMES[i], "look": i, "bot": i > 0}
+	var config := {"seed": 7, "players": players, "settings": Rules.DEFAULT_SETTINGS.duplicate(),
+		"map": "res://game/world/moonpatch_village.tscn", "practice": true}
+	Session.in_match = true
+	var game: Game = (load("res://game/game.tscn") as PackedScene).instantiate()
+	game.config = config
+	get_tree().root.add_child(game)
+	await get_tree().process_frame
+	var host := game.host
+	host.set_process(false)
+	for i in 5:
+		host._process(1.0 / 30.0)
+		await get_tree().process_frame
+	check(host.practice, "practice flag reaches the host")
+	check(host.actors.values().all(func(a): return a.role == Rules.Role.LAMPLIGHTER), "practice: everyone is a Lamplighter")
+	check(host.lit.size() - host.lit_count() == 1, "practice: exactly one lantern starts dark")
+	check(game.player != null and game.hud.guide != null, "practice: the guide is running")
+	check(game.hud.hints == null, "practice: no one-time tips")
+	await _drive_guide(game, host)
+	var start_bots: Array = host.bots.keys().map(func(id): return host.actors[id].pos)
+	for i in 30 * 600:
+		host._process(1.0 / 30.0)
+		if i % 900 == 0:
+			await get_tree().process_frame
+	check(host.phase == Rules.Phase.NIGHT, "practice: ten quiet minutes don't end the round")
+	check(host.bots.keys().map(func(id): return host.actors[id].pos) == start_bots, "practice: bots stand still")
+	check(host.phase == Rules.Phase.NIGHT, "practice: the night resumes after the meeting")
+	game.queue_free()
+	await get_tree().process_frame
+	Session.leave()
+
+
+## The how-to pages and role cards build and page through without errors.
+func _test_tutorial_ui() -> void:
+	var howto := HowToPanel.new()
+	add_child(howto)
+	var closed := [false]
+	howto.closed.connect(func(): closed[0] = true)
+	howto.open()
+	await get_tree().process_frame
+	var pages := HowToPanel.pages().size()
+	for i in pages:
+		howto._go(1)
+	check(closed[0] and not howto.visible, "how to play closes after the last page (%d pages)" % pages)
+	howto.queue_free()
+	var card := RoleCard.new()
+	add_child(card)
+	for role in Rules.ROLE_NAMES:
+		check(Rules.ROLE_CARDS.has(role), "role %d has a card" % role)
+		card.show_role(role, ["Ada"])
+		check(card.visible, "role card opens for role %d" % role)
+		card.close()
+	card.queue_free()
+	await get_tree().process_frame
+
+
+## Plays the practice round the way a player would and checks the guide advances.
+func _drive_guide(game: Game, host: MatchHost) -> void:
+	var guide: PracticeGuide = game.hud.guide
+	check(guide._step == 0, "guide starts on the walking step")
+	for i in 12:
+		game.player.global_position += Vector3(1, 0, 0)
+		await get_tree().process_frame
+	check(guide._step == 1, "walking moves the guide to the lantern step")
+	var dark := host.lit.find(false)
+	check(dark >= 0, "a dark lantern waits to be relit")
+	host.actors[1].pos = host.lantern_pos[dark] + Vector3(1, 0, 0)
+	check(host.act(1, Rules.Act.RELIGHT_START, dark), "relight starts")
+	for i in 70:
+		host._process(1.0 / 30.0)
+	check(host.act(1, Rules.Act.RELIGHT_DONE, dark), "relight finishes")
+	await get_tree().process_frame
+	await get_tree().process_frame
+	check(guide._step == 2, "relighting moves the guide to the chores")
+	for n in PracticeGuide.CHORES_NEEDED:
+		var chore := game.current_chore()
+		check(not chore.is_empty(), "chore %d is waiting" % n)
+		var index: int = chore.index
+		host.actors[1].pos = host.station_position(chore.data.station)
+		check(host.act(1, Rules.Act.CHORE_START, index), "chore %d starts (%s)" % [n, chore.key])
+		for i in 90:
+			host._process(1.0 / 30.0)
+		check(host.act(1, Rules.Act.CHORE_DONE, index), "chore %d finishes" % n)
+		await get_tree().process_frame
+	await get_tree().process_frame
+	check(guide._step == 3, "three chores move the guide to the map")
+	game.hud.map.open()
+	await get_tree().process_frame
+	game.hud.map.close()
+	check(guide._step == 4, "opening the map moves the guide to the bell")
+	host.actors[1].pos = host.village.bell_position()
+	check(host.act(1, Rules.Act.BELL, 0), "the bell rings")
+	await get_tree().process_frame
+	check(guide._step == 5, "the meeting moves the guide on")
+	var steps := 0
+	while host.phase == Rules.Phase.MEETING and steps < 30 * 120:
+		host._process(1.0 / 30.0)
+		if host.meeting.get("phase") == Rules.MeetingPhase.VOTE and not host.meeting.votes.has(1):
+			host.vote(1, Rules.SKIP_VOTE)
+		steps += 1
+	await get_tree().process_frame
+	await get_tree().process_frame
+	check(guide.blocking(), "the guide ends with the completion panel")
