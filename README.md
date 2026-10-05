@@ -58,7 +58,7 @@ only while you play. See [docs/ai-players.md](docs/ai-players.md).
 
 ## Building and testing
 
-You need Godot 4.6.
+You need Godot 4.7.
 
 ```sh
 godot --headless --path . --import

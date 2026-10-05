@@ -71,7 +71,7 @@ parts:
       craftctl set version="$(sed -n 's/^config\/version="\(.*\)"/\1/p' project.godot)"
     override-build: |
       # Godot version used to export; keep in step with the project.
-      GODOT_VERSION=4.6.3
+      GODOT_VERSION=4.7.2
       BASE="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
       curl -sSfL -o godot.zip "$BASE/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
       curl -sSfL -o templates.tpz "$BASE/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
