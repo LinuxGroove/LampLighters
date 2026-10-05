@@ -84,6 +84,7 @@ func setup(p_game: Game) -> void:
 	log_panel.add_child(_log_scroll)
 	_log = VBoxContainer.new()
 	_log.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_log.add_theme_constant_override("separation", 8)
 	_log_scroll.add_child(_log)
 	_chat = GridContainer.new()
 	_chat.columns = 2
@@ -259,15 +260,31 @@ func _say(kind: int, a: int, place: int) -> void:
 
 
 func _on_said(id: int, text: String) -> void:
-	var row := HBoxContainer.new()
-	var who := LGUi.label(game.player_name(id) + ":", "NameLabel")
-	who.add_theme_color_override("font_color", game.player_color(id).lightened(0.25))
-	row.add_child(who)
+	# Each line is its own bubble, edged in the speaker's colour, so lines
+	# don't run together.
+	var color := game.player_color(id).lightened(0.25)
+	var row := PanelContainer.new()
+	var box := StyleBoxFlat.new()
+	box.bg_color = Color(1, 1, 1, 0.07 if _log.get_child_count() % 2 == 0 else 0.12)
+	box.border_color = color
+	box.border_width_left = 5
+	box.set_corner_radius_all(8)
+	box.content_margin_left = 14
+	box.content_margin_right = 10
+	box.content_margin_top = 6
+	box.content_margin_bottom = 8
+	row.add_theme_stylebox_override("panel", box)
+	var lines := VBoxContainer.new()
+	lines.add_theme_constant_override("separation", 2)
+	row.add_child(lines)
+	var who := LGUi.label(game.player_name(id), "NameLabel")
+	who.add_theme_color_override("font_color", color)
+	lines.add_child(who)
 	var what := LGUi.label(text)
 	what.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	what.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	what.custom_minimum_size.x = 300
-	row.add_child(what)
+	lines.add_child(what)
 	_log.add_child(row)
 	LGAudio.play_sfx("res://assets/kenney/audio/sfx/pluck_001.ogg", -12.0, 0.1)
 	await get_tree().process_frame
