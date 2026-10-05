@@ -74,7 +74,7 @@ func _environment() -> void:
 	env.background_color = Color(0.015, 0.02, 0.045)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color(0.32, 0.38, 0.62)
-	env.ambient_light_energy = 0.32
+	env.ambient_light_energy = 0.14
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	env.glow_enabled = true
 	env.glow_intensity = 0.6
@@ -87,7 +87,7 @@ func _environment() -> void:
 	var moon := DirectionalLight3D.new()
 	moon.name = "Moon"
 	moon.light_color = Color(0.55, 0.65, 1.0)
-	moon.light_energy = 0.22
+	moon.light_energy = 0.14
 	moon.rotation_degrees = Vector3(-60, -30, 0)
 	moon.shadow_enabled = false
 	village.add_child(moon)

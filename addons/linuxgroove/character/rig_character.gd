@@ -63,6 +63,20 @@ func play_once(clip: String, blend := 0.1, speed := 1.0) -> void:
 	_anim.play(clip, blend, speed)
 
 
+## Makes a normally one-shot clip loop (or not) on this character.
+func set_looping(clip: String, on := true) -> void:
+	if _anim and _anim.has_animation(clip):
+		_anim.get_animation(clip).loop_mode = Animation.LOOP_LINEAR if on else Animation.LOOP_NONE
+
+
+## The Skeleton3D inside the model, for attaching props to bones.
+func skeleton() -> Skeleton3D:
+	if model == null:
+		return null
+	var found := model.find_children("*", "Skeleton3D", true, false)
+	return found[0] if not found.is_empty() else null
+
+
 func current_clip() -> String:
 	return _current
 

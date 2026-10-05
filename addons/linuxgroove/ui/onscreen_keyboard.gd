@@ -30,7 +30,7 @@ static func open(p_target: LineEdit, p_uppercase_only := false) -> OnScreenKeybo
 
 func _ready() -> void:
 	theme_type_variation = "DarkPanel"
-	set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
 	grow_horizontal = Control.GROW_DIRECTION_BOTH
 	grow_vertical = Control.GROW_DIRECTION_BEGIN
 	position.y -= 24

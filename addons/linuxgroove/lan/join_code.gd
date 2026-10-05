@@ -36,7 +36,11 @@ static func encode(ip: String, port: int, default_port: int) -> String:
 
 ## Returns {"ip": String, "port": int}, or an empty dictionary if invalid.
 static func decode(code: String, default_port: int) -> Dictionary:
-	var bytes := _from_base32(normalize(code))
+	for ch in code.to_upper():
+		if not (ALPHABET.contains(ch) or ch in ["O", "I", "L", "-", " "]):
+			return {}
+	var clean := normalize(code)
+	var bytes := _from_base32(clean)
 	if bytes.is_empty():
 		return {}
 	var header := bytes[0]
@@ -70,6 +74,10 @@ static func decode(code: String, default_port: int) -> Dictionary:
 		if bytes.size() < used + 2:
 			return {}
 		port = (bytes[used] << 8) | bytes[used + 1]
+		used += 2
+	# A typo usually changes the length; only exact codes are accepted.
+	if _to_base32(bytes.slice(0, used)) != clean:
+		return {}
 	return {"ip": ip, "port": port}
 
 

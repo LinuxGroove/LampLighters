@@ -64,6 +64,16 @@ func landmark_name(pos: Vector3) -> String:
 	return best
 
 
+## Landmark names in a fixed order, so quick-chat can refer to a place by index.
+func landmark_names() -> Array[String]:
+	var out: Array[String] = []
+	var marks := get_node_or_null("Landmarks")
+	if marks:
+		for m in marks.get_children():
+			out.append(String(m.name).replace("_", " "))
+	return out
+
+
 func landmark_positions() -> Dictionary:
 	var out := {}
 	var marks := get_node_or_null("Landmarks")

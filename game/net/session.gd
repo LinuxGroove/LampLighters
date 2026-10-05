@@ -13,6 +13,8 @@ signal hosts_found(hosts: Array)
 signal joined
 signal left(reason: String)
 signal status(text: String)
+## Host: a player's device has loaded the village and can receive the match.
+signal peer_loaded(id: int)
 
 enum Mode { NONE, SOLO, LAN_HOST, LAN_CLIENT, ONLINE_HOST, ONLINE_CLIENT }
 
@@ -26,6 +28,9 @@ var join_code := ""
 var lan_address := ""
 var in_match := false
 var match_config := {}
+## Host: peers whose game scene is ready, so match messages can reach them.
+var loaded_peers := {}
+var rounds_played := 0
 
 var _beacon: LanBeacon
 var _pending_hello := {}
@@ -124,7 +129,7 @@ func join_lan_code(code: String) -> bool:
 func host_online() -> bool:
 	leave()
 	status.emit("Connecting to the game server...")
-	if not await LGOnline.connect_async(player_name()):
+	if not await LGOnline.connect_async(player_name(), GameConfig.GAME_ID):
 		status.emit(LGOnline.last_error)
 		return false
 	var code: String = await LGOnline.host_room_async(GameConfig.GAME_ID)
@@ -143,7 +148,7 @@ func host_online() -> bool:
 func join_online(code: String) -> bool:
 	leave()
 	status.emit("Connecting to the game server...")
-	if not await LGOnline.connect_async(player_name()):
+	if not await LGOnline.connect_async(player_name(), GameConfig.GAME_ID):
 		status.emit(LGOnline.last_error)
 		return false
 	if not await LGOnline.join_room_async(GameConfig.GAME_ID, code):
@@ -170,6 +175,8 @@ func leave(reason := "") -> void:
 	join_code = ""
 	in_match = false
 	match_config = {}
+	loaded_peers.clear()
+	rounds_played = 0
 	_pending_hello.clear()
 	if was != Mode.NONE:
 		left.emit(reason)
@@ -232,9 +239,43 @@ func start_match() -> void:
 		"map": "res://game/world/moonpatch_village.tscn",
 	}
 	_beacon.update_info({"state": "playing"})
+	loaded_peers.clear()
 	for peer_id in multiplayer.get_peers():
 		_h_start_match.rpc_id(peer_id, config)
 	_h_start_match(config)
+
+
+## Host: deals a fresh match with the same players.
+func restart_match() -> void:
+	if is_host():
+		in_match = false
+		start_match()
+
+
+## Host of an online room: reports the round to the game server for stats
+## and leaderboards. Bots aren't reported.
+func report_round(result: Dictionary) -> void:
+	if mode != Mode.ONLINE_HOST or LGOnline.bridge == null:
+		return
+	rounds_played += 1
+	var players := []
+	for id in result.players:
+		if id <= 0 or result.players[id].get("bot", false):
+			continue
+		var uid := LGOnline.user_id_for_peer(id)
+		if uid == "":
+			continue
+		players.append({
+			"user_id": uid,
+			"team": "hollow" if Rules.team_of(result.roles[id]) == Rules.Team.HOLLOW else "village",
+			"survived": bool(result.players[id].alive),
+		})
+	LGOnline.rpc_async("%s.round_report" % GameConfig.GAME_ID, {
+		"match_id": LGOnline.bridge.match_id,
+		"round": rounds_played,
+		"winner": "hollow" if int(result.winner) == Rules.Team.HOLLOW else "village",
+		"players": players,
+	})
 
 
 ## Host: everyone goes back to the lobby after a match.
@@ -245,6 +286,17 @@ func return_to_lobby() -> void:
 	for peer_id in multiplayer.get_peers():
 		_h_return_to_lobby.rpc_id(peer_id)
 	_h_return_to_lobby()
+
+
+## Called by the game scene once it is in the tree. The host learns which
+## peers are ready through Session (always present) rather than the game
+## scene, which may not exist yet on the host when a fast client reports.
+func report_loaded() -> void:
+	if is_host():
+		loaded_peers[1] = true
+		peer_loaded.emit(1)
+	else:
+		_c_match_loaded.rpc_id(1)
 
 
 func set_look(look: int) -> void:
@@ -325,6 +377,14 @@ func _c_hello(version: String, protocol: int, name: String, look: int) -> void:
 	players[id] = {"name": _unique_name(name.strip_edges().left(16)), "look": look, "bot": false}
 	_broadcast_roster()
 	status.emit("%s joined." % players[id].name)
+
+
+@rpc("any_peer", "reliable")
+func _c_match_loaded() -> void:
+	if is_host() and in_match:
+		var id := multiplayer.get_remote_sender_id()
+		loaded_peers[id] = true
+		peer_loaded.emit(id)
 
 
 @rpc("any_peer", "reliable")

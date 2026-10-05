@@ -38,8 +38,9 @@ func is_connected_online() -> bool:
 	return session != null and socket != null and socket.is_connected_to_host()
 
 
-## Authenticates this device and opens the realtime socket.
-func connect_async(display_name: String) -> bool:
+## Authenticates this device and opens the realtime socket. The server
+## refuses logins that don't say which game and version they come from.
+func connect_async(display_name: String, game_id: String) -> bool:
 	if is_connected_online():
 		return true
 	var settings := get_node("/root/LGSettings")
@@ -50,9 +51,17 @@ func connect_async(display_name: String) -> bool:
 		int(settings.get_value("online", "port")),
 		str(settings.get_value("online", "scheme")),
 		5, NakamaLogger.LOG_LEVEL.ERROR)
-	session = await client.authenticate_device_async(Nakama.get_device_id(), null, true)
+	var vars := {
+		"game": game_id,
+		"version": str(ProjectSettings.get_setting("application/config/version", "0.0.0")),
+		"platform": "ubuntu" if OS.get_name() == "Linux" else OS.get_name().to_lower(),
+	}
+	session = await client.authenticate_device_async(Nakama.get_device_id(), null, true, vars)
 	if session.is_exception():
-		return _fail("Could not sign in: %s" % session.get_exception().message)
+		var msg: String = session.get_exception().message
+		if msg.begins_with("update_required"):
+			return _fail("The game server needs a newer version of this game. Please update.")
+		return _fail("Could not sign in: %s" % msg)
 	if display_name != "":
 		# Best effort; a taken or invalid name shouldn't block play.
 		await client.update_account_async(session, null, display_name)
@@ -94,6 +103,16 @@ func rpc_async(rpc_id: String, payload: Dictionary) -> Variant:
 		push_warning("Online: RPC %s failed: %s" % [rpc_id, res.get_exception().message])
 		return null
 	return JSON.parse_string(res.payload) if res.payload != "" else {}
+
+
+## The account id behind a multiplayer peer in the current room ("" if unknown).
+func user_id_for_peer(peer_id: int) -> String:
+	if peer_id == 1 and bridge and bridge.multiplayer_peer.get_unique_id() == 1 and session:
+		return session.user_id
+	if bridge == null:
+		return ""
+	var presence = bridge.get_user_presence_for_peer(peer_id)
+	return presence.user_id if presence else ""
 
 
 func disconnect_online() -> void:

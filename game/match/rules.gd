@@ -18,7 +18,7 @@ const ROLE_NAMES := {
 const ROLE_BLURBS := {
 	Role.LAMPLIGHTER: "Keep the lanterns lit and finish your chores before dawn. Find the Hollow.",
 	Role.HOLLOW: "Snuff the lanterns and take villagers in the dark. Don't get caught.",
-	Role.SEER: "Once between meetings, look closely at a villager to learn if they are Hollow.",
+	Role.SEER: "Once tonight, look closely at a villager to learn if they are Hollow. Choose well.",
 	Role.WATCHMAN: "You see fresh footprints in the dark for a few seconds after someone passes.",
 }
 
@@ -28,6 +28,9 @@ const SKIP_VOTE := 0
 const PERSONAL_LIGHT := 4.5
 const LANTERN_RADIUS := 6.0
 const VIEW_RADIUS := 14.0
+## Chores need a lit lantern this close to the station (your own lantern is
+## too dim to work by), except chores marked "dark".
+const WORK_LIGHT_RADIUS := 7.0
 const INTERACT_RANGE := 2.3
 const TAKE_RANGE := 1.9
 const SEER_RANGE := 3.0
@@ -41,7 +44,7 @@ const GHOST_SPEED := 4.2
 # Timings (seconds)
 const RELIGHT_TIME := 2.0
 const SNUFF_COOLDOWN := 22.0
-const TAKE_COOLDOWN := 30.0
+const TAKE_COOLDOWN := 25.0
 const FIRST_COOLDOWN := 12.0
 const BELL_COOLDOWN := 15.0
 const REVEAL_TIME := 6.0
@@ -60,7 +63,7 @@ const CHORES := {
 		{"station": "woodpile", "game": "hold", "time": 1.5, "min": 1.2, "carry": "wood"},
 		{"station": "campfire", "game": "hold", "time": 1.0, "min": 0.8}]},
 	"market": {"label": "Tidy the market stall", "steps": [{"station": "market", "game": "sequence", "min": 1.2}]},
-	"grave": {"label": "Dig at the old grave", "steps": [{"station": "grave", "game": "mash", "min": 1.5}]},
+	"grave": {"label": "Dig at the old grave", "steps": [{"station": "grave", "game": "mash", "min": 1.5, "dark": true}]},
 }
 
 ## Lobby settings the host can change. Every client gets a copy.
@@ -68,7 +71,7 @@ const DEFAULT_SETTINGS := {
 	"night_minutes": 8,
 	"hollow_count": 0,         # 0 = automatic (1 for up to 6 players, 2 above)
 	"special_roles": true,     # Seer from 5 players, Watchman from 7
-	"chores_each": 4,
+	"chores_each": 5,
 	"discussion_seconds": 45,
 	"vote_seconds": 30,
 	"reveal_on_banish": true,

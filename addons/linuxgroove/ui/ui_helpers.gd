@@ -60,7 +60,7 @@ static func click() -> void:
 ## A centred column for menu screens.
 static func centered_column(parent: Control, width := 520) -> VBoxContainer:
 	var center := CenterContainer.new()
-	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	parent.add_child(center)
 	var col := VBoxContainer.new()
 	col.custom_minimum_size.x = width

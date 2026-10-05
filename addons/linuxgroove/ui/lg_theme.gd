@@ -22,6 +22,12 @@ static var mono_font: Font
 static func apply(root: Window, base_size := 22) -> Theme:
 	var theme := build(base_size)
 	root.theme = theme
+	# Themes only pass down through Controls and Windows, so menus under a
+	# CanvasLayer or a 3D scene wouldn't see it. Merging into the default
+	# theme makes it apply everywhere.
+	ThemeDB.get_default_theme().merge_with(theme)
+	ThemeDB.get_default_theme().default_font = theme.default_font
+	ThemeDB.get_default_theme().default_font_size = theme.default_font_size
 	return theme
 
 
@@ -47,6 +53,18 @@ static func build(base_size := 22) -> Theme:
 	t.set_type_variation("InkLabel", "Label")
 	t.set_color("font_color", "InkLabel", INK)
 	t.set_constant("outline_size", "InkLabel", 0)
+	t.set_type_variation("InkHeader", "Label")
+	t.set_font("font", "InkHeader", heading_font)
+	t.set_font_size("font_size", "InkHeader", int(base_size * 1.4))
+	t.set_color("font_color", "InkHeader", INK)
+	t.set_constant("outline_size", "InkHeader", 0)
+	t.set_type_variation("InkTitle", "Label")
+	t.set_font("font", "InkTitle", heading_font)
+	t.set_font_size("font_size", "InkTitle", int(base_size * 1.9))
+	t.set_color("font_color", "InkTitle", INK)
+	t.set_constant("outline_size", "InkTitle", 0)
+	t.set_type_variation("NameLabel", "Label")
+	t.set_font("font", "NameLabel", heading_font)
 	t.set_type_variation("HintLabel", "Label")
 	t.set_font_size("font_size", "HintLabel", int(base_size * 0.8))
 	t.set_color("font_color", "HintLabel", Color(PARCHMENT, 0.8))
@@ -67,17 +85,20 @@ static func build(base_size := 22) -> Theme:
 	t.set_stylebox("focus", "Button", _focus_box())
 	t.set_font("font", "Button", heading_font)
 	t.set_font_size("font_size", "Button", base_size)
-	t.set_color("font_color", "Button", PARCHMENT)
-	t.set_color("font_hover_color", "Button", Color.WHITE)
-	t.set_color("font_focus_color", "Button", Color.WHITE)
-	t.set_color("font_pressed_color", "Button", PARCHMENT)
-	t.set_color("font_disabled_color", "Button", Color(PARCHMENT, 0.6))
-	t.set_color("font_outline_color", "Button", Color(0, 0, 0, 0.6))
-	t.set_constant("outline_size", "Button", 3)
+	# The button texture is light, so button text is ink.
+	t.set_color("font_color", "Button", INK)
+	t.set_color("font_hover_color", "Button", Color.BLACK)
+	t.set_color("font_focus_color", "Button", Color.BLACK)
+	t.set_color("font_pressed_color", "Button", INK)
+	t.set_color("font_hover_pressed_color", "Button", INK)
+	t.set_color("font_disabled_color", "Button", Color(INK, 0.45))
+	t.set_constant("outline_size", "Button", 0)
 
 	t.set_type_variation("DangerButton", "Button")
 	var danger := _tex_box("button_red.png", 16, Vector4(22, 10, 22, 12))
 	t.set_stylebox("normal", "DangerButton", danger)
+	for c in ["font_color", "font_hover_color", "font_focus_color", "font_pressed_color"]:
+		t.set_color(c, "DangerButton", Color.WHITE)
 
 	# Option buttons and check boxes share the button look
 	for type in ["OptionButton", "MenuButton"]:
@@ -85,7 +106,7 @@ static func build(base_size := 22) -> Theme:
 			t.set_stylebox(state, type, t.get_stylebox(state, "Button"))
 		t.set_font("font", type, heading_font)
 		t.set_font_size("font_size", type, base_size)
-		t.set_color("font_color", type, PARCHMENT)
+		t.set_color("font_color", type, INK)
 	t.set_stylebox("focus", "CheckBox", _focus_box())
 	t.set_stylebox("focus", "CheckButton", _focus_box())
 	t.set_icon("checked", "CheckBox", _tex("checkbox_brown_checked.png"))
@@ -101,7 +122,15 @@ static func build(base_size := 22) -> Theme:
 	t.set_type_variation("DarkPanel", "PanelContainer")
 	t.set_stylebox("panel", "DarkPanel", _tex_box("panel_brown_dark.png", 24, Vector4(24, 20, 24, 20)))
 	t.set_type_variation("ParchmentPanel", "PanelContainer")
-	t.set_stylebox("panel", "ParchmentPanel", _tex_box("panel_border_brown_detail.png", 28, Vector4(30, 26, 30, 26)))
+	var parchment := StyleBoxFlat.new()
+	parchment.bg_color = PARCHMENT
+	parchment.border_color = Color("8a5a32")
+	parchment.set_border_width_all(6)
+	parchment.set_corner_radius_all(14)
+	parchment.set_content_margin_all(26)
+	parchment.shadow_color = Color(0, 0, 0, 0.45)
+	parchment.shadow_size = 10
+	t.set_stylebox("panel", "ParchmentPanel", parchment)
 	t.set_type_variation("GlassPanel", "PanelContainer")
 	var glass := StyleBoxFlat.new()
 	glass.bg_color = Color(0.05, 0.05, 0.1, 0.72)
