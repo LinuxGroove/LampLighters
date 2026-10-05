@@ -89,6 +89,7 @@ func _ready() -> void:
 	body.add_child(right)
 	var rscroll := ScrollContainer.new()
 	rscroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	rscroll.follow_focus = true
 	right.add_child(rscroll)
 	_settings_box = VBoxContainer.new()
 	_settings_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -98,7 +99,6 @@ func _ready() -> void:
 	for row in SETTING_ROWS:
 		var key: String = row[0]
 		var c := LGCycler.make(row[1], row[2], Session.settings.get(key), func(v): Session.set_setting(key, v), 520)
-		c.follow_focus = true
 		_cyclers[key] = c
 		_settings_box.add_child(c)
 	_ai = LGUi.label("", "HintLabel")

@@ -11,6 +11,8 @@ func _ready() -> void:
 	for i in range(1, args.size()):
 		if args[i] == "meeting":
 			meeting = true
+		elif args[i] in ["title", "lobby"]:
+			pass
 		else:
 			times.append(float(args[i]))
 	if times.is_empty():
@@ -19,6 +21,16 @@ func _ready() -> void:
 	LGInput.extend_ui_actions()
 	LGTheme.apply(get_tree().root, 22)
 	LGSettings.set_value("player", "name", "Ken", false)
+	if "title" in args or "lobby" in args:
+		get_tree().current_scene = null
+		if "lobby" in args:
+			Session.start_solo(5)
+		LGScenes.change_scene("res://game/ui/%s.tscn" % ("lobby" if "lobby" in args else "title"))
+		await get_tree().create_timer(4.0).timeout
+		await RenderingServer.frame_post_draw
+		get_viewport().get_texture().get_image().save_png("%s_menu.png" % prefix)
+		get_tree().quit()
+		return
 	# Stay alive when the game scene replaces the current scene.
 	get_tree().current_scene = null
 	Session.start_solo(5)
