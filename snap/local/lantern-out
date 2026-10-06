@@ -1,4 +1,4 @@
 #!/bin/sh
 # Starts the exported game. Release builds of Godot don't accept --main-pack;
 # they load lantern-out.pck from beside the binary on their own.
-exec "$SNAP/game/lantern-out.x86_64" "$@"
+exec "$SNAP/game/lantern-out" "$@"

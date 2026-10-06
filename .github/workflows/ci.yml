@@ -25,15 +25,3 @@ jobs:
         run: godot --headless --path . tools/check_scripts.tscn 2>&1 | tee check.log; ! grep -q "SCRIPT ERROR" check.log
       - name: Run tests
         run: godot --headless --path . tests/run_tests.tscn -- --games=10 2>&1 | tee test.log; ! grep -q "SCRIPT ERROR" test.log
-
-  snap:
-    name: Build the snap
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: snapcore/action-build@v1
-        id: build
-      - uses: actions/upload-artifact@v4
-        with:
-          name: lantern-out-snap
-          path: ${{ steps.build.outputs.snap }}
