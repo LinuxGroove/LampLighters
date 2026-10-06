@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="Lantern Out"
+config/name="Graveyard Hollow"
 config/description="Keep the village lanterns lit until dawn. One of your friends is blowing them out."
 config/version="0.1.0"
 run/main_scene="res://game/main.tscn"
@@ -19,7 +19,7 @@ boot_splash/bg_color=Color(0.02, 0.03, 0.06, 1)
 boot_splash/show_image=false
 config/icon="res://icon.svg"
 config/use_custom_user_dir=true
-config/custom_user_dir_name="lantern-out"
+config/custom_user_dir_name="graveyard-hollow"
 
 [autoload]
 

@@ -369,7 +369,7 @@ func _c_hello(version: String, protocol: int, name: String, look: int) -> void:
 	var id := multiplayer.get_remote_sender_id()
 	_pending_hello.erase(id)
 	if protocol != GameConfig.PROTOCOL:
-		_kick(id, "This game is version %s. Update Lantern Out to play together." % GameConfig.version())
+		_kick(id, "This game is version %s. Update Graveyard Hollow to play together." % GameConfig.version())
 		return
 	if in_match:
 		_kick(id, "A night is already under way. Join after it ends.")

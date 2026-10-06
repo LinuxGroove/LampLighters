@@ -1,13 +1,13 @@
-name: lantern-out
-title: Lantern Out
-adopt-info: lantern-out
+name: graveyard-hollow
+title: Graveyard Hollow
+adopt-info: graveyard-hollow
 base: core24
 summary: Keep the village lanterns lit until dawn while a friend blows them out.
 description: |
-  Lantern Out is a social deduction party game for 4 to 10 players. At night
-  the villagers keep the lanterns burning and finish their chores, while one
-  or two secret Hollow snuff the lights and take villagers in the dark. Find
-  a friend's empty lantern, ring the bell, argue it out, and vote.
+  Graveyard Hollow is a social deduction party game for 4 to 10 players. At
+  night the villagers keep the lanterns burning and finish their chores, while
+  one or two secret Hollow snuff the lights and take villagers in the dark.
+  Find a friend's empty lantern, ring the bell, argue it out, and vote.
 
   - Play on your local network, each on your own device, or online through
     a LinuxGroove game server
@@ -28,8 +28,8 @@ platforms:
   arm64:
 
 apps:
-  lantern-out:
-    command: bin/lantern-out
+  graveyard-hollow:
+    command: bin/graveyard-hollow
     extensions: [gnome]
     environment:
       # $SNAP/bin first so lemond finds bsdtar as "tar" (see the lemonade part).
@@ -41,7 +41,7 @@ apps:
       - network-bind
 
 parts:
-  lantern-out:
+  graveyard-hollow:
     plugin: nil
     source: .
     build-packages:
@@ -89,9 +89,9 @@ parts:
       unzip -o -q -j templates.tpz "templates/linux_release.${ARCH}" templates/version.txt -d "$TEMPLATES"
       "$GODOT" --headless --path . --import
       mkdir -p "$CRAFT_PART_INSTALL/game" "$CRAFT_PART_INSTALL/bin"
-      "$GODOT" --headless --path . --export-release "$PRESET" "$CRAFT_PART_INSTALL/game/lantern-out"
-      test -f "$CRAFT_PART_INSTALL/game/lantern-out.pck"
-      install -m 755 snap/local/lantern-out "$CRAFT_PART_INSTALL/bin/"
+      "$GODOT" --headless --path . --export-release "$PRESET" "$CRAFT_PART_INSTALL/game/graveyard-hollow"
+      test -f "$CRAFT_PART_INSTALL/game/graveyard-hollow.pck"
+      install -m 755 snap/local/graveyard-hollow "$CRAFT_PART_INSTALL/bin/"
       cp LICENSE CREDITS.md "$CRAFT_PART_INSTALL/game/"
 
   lemonade:

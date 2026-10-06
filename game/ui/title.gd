@@ -65,7 +65,7 @@ func _clear() -> void:
 
 
 func _add_title() -> void:
-	var title := LGUi.label("Lantern Out", "HeaderLarge")
+	var title := LGUi.label("Graveyard Hollow", "HeaderLarge")
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_color_override("font_color", Color("ffd27a"))
 	_col.add_child(title)
@@ -92,7 +92,7 @@ func _show_main() -> void:
 	_col.add_child(LGUi.button("Play online", _show_online))
 	_col.add_child(LGUi.button("Settings", func(): _show_settings()))
 	_col.add_child(LGUi.button("Your name: %s" % Session.player_name(), func(): _show_name(false)))
-	_col.add_child(LGUi.button("About Lantern Out", _show_about))
+	_col.add_child(LGUi.button("About Graveyard Hollow", _show_about))
 	var quit := LGUi.button("Quit", func(): get_tree().quit())
 	quit.theme_type_variation = "DangerButton"
 	_col.add_child(quit)
@@ -342,7 +342,7 @@ func _show_settings() -> void:
 ## Credits. Up and down scroll the page, since Back is the only button.
 func _show_about() -> void:
 	_clear()
-	_col.add_child(LGUi.label("About Lantern Out", "HeaderMedium"))
+	_col.add_child(LGUi.label("About Graveyard Hollow", "HeaderMedium"))
 	_about_scroll = ScrollContainer.new()
 	_about_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_about_scroll.custom_minimum_size = Vector2(620, 520)
@@ -376,7 +376,7 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
-const ABOUT_TEXT := """[center][b]Lantern Out[/b]  v%s
+const ABOUT_TEXT := """[center][b]Graveyard Hollow[/b]  v%s
 A LinuxGroove game
 
 [b]Created by[/b]
@@ -400,4 +400,4 @@ AI players' language models download on first use
 under their own licenses.
 
 Copyright (c) 2026 The LinuxGroove team
-Lantern Out is free software under the MIT license.[/center]"""
+Graveyard Hollow is free software under the MIT license.[/center]"""
