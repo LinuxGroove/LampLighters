@@ -19,9 +19,9 @@ grade: stable
 confinement: strict
 compression: lzo
 license: MIT AND CC0-1.0 AND Apache-2.0
-website: https://github.com/LinuxGroove/LampLighters
-source-code: https://github.com/LinuxGroove/LampLighters
-issues: https://github.com/LinuxGroove/LampLighters/issues
+website: https://github.com/LinuxGroove/graveyard-hollow
+source-code: https://github.com/LinuxGroove/graveyard-hollow
+issues: https://github.com/LinuxGroove/graveyard-hollow/issues
 
 platforms:
   amd64:
