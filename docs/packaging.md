@@ -1,11 +1,11 @@
 # Packaging
 
-Lantern Out ships as the strictly confined snap `lantern-out`
+Graveyard Hollow ships as the strictly confined snap `graveyard-hollow`
 (`snap/snapcraft.yaml`, core24, amd64).
 
 ## What the build does
 
-1. **lantern-out part**: downloads the Godot editor and export templates for
+1. **graveyard-hollow part**: downloads the Godot editor and export templates for
    the pinned version (`GODOT_VERSION` in the yaml, keep it in step with
    `project.godot`), imports the project and runs
    `--export-release Linux` with the preset in `export_presets.cfg`. The
@@ -31,14 +31,14 @@ The gnome extension's desktop plugs, plus `audio-playback`, `joystick`
 the local model server). `joystick` is not auto-connected on desktops:
 
 ```sh
-sudo snap connect lantern-out:joystick
+sudo snap connect graveyard-hollow:joystick
 ```
 
 ## Where data lives
 
 | What | Where |
 | --- | --- |
-| Settings and player name | `$SNAP_USER_DATA/.local/share/lantern-out` |
+| Settings and player name | `$SNAP_USER_DATA/.local/share/graveyard-hollow` |
 | Downloaded AI models | `$SNAP_USER_COMMON/lemonade` |
 
 ## Updating Godot or Lemonade

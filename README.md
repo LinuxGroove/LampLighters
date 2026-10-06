@@ -1,4 +1,4 @@
-# Lantern Out
+# Graveyard Hollow
 
 Keep the village lanterns lit until dawn. One of your friends is blowing them out.
 
@@ -72,7 +72,7 @@ The village is generated from the Kenney kits by `tools/build_village.gd`
 
 ## Snap
 
-`snapcraft` builds a strictly confined snap, `lantern-out`, with the
+`snapcraft` builds a strictly confined snap, `graveyard-hollow`, with the
 exported game and the embedded Lemonade Server. It is packaged as a
 regular desktop snap with the gnome extension, so it runs the same on an
 Ubuntu desktop and on a handheld's gamepad shell. See [docs/packaging.md](docs/packaging.md).
@@ -81,7 +81,7 @@ Ubuntu desktop and on a handheld's gamepad shell. See [docs/packaging.md](docs/p
 
 | Path | What |
 |---|---|
-| `game/` | Lantern Out itself: match rules and host, bots, actors, UI |
+| `game/` | Graveyard Hollow itself: match rules and host, bots, actors, UI |
 | `addons/linuxgroove/` | The shared LinuxGroove add-on (settings, input and glyphs, theme, LAN, online, local AI). Kept self-contained so it can move to its own repository |
 | `addons/com.heroiclabs.nakama/` | Vendored Nakama client |
 | `assets/kenney/` | Kenney packs (CC0) |

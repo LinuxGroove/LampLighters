@@ -1,9 +1,9 @@
 [Desktop Entry]
 Type=Application
-Name=Lantern Out
+Name=Graveyard Hollow
 Comment=Keep the village lanterns lit until dawn while a friend blows them out.
-Exec=lantern-out
-Icon=${SNAP}/meta/gui/lantern-out.svg
+Exec=graveyard-hollow
+Icon=${SNAP}/meta/gui/graveyard-hollow.svg
 Categories=Game;
 Keywords=party;social;deduction;lan;
-StartupWMClass=Lantern Out
+StartupWMClass=Graveyard Hollow

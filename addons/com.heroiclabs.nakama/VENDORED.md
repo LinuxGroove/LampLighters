@@ -5,5 +5,5 @@
 - License: Apache-2.0 (see LICENSE)
 
 Copied unchanged from `addons/com.heroiclabs.nakama`, minus the Satori SDK and the
-C# (`dotnet-utils`) adapters, which Lantern Out doesn't use. To update, copy the
+C# (`dotnet-utils`) adapters, which Graveyard Hollow doesn't use. To update, copy the
 same folders from a newer upstream commit and update the hash above.
