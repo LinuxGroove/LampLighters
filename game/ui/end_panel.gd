@@ -8,6 +8,7 @@ var _reason: Label
 var _list: GridContainer
 var _stats: Label
 var _buttons: HBoxContainer
+var _leave: Button
 
 
 func setup(p_game: Game) -> void:
@@ -75,12 +76,28 @@ func open(res: Dictionary) -> void:
 	_stats.text = "Chores %d/%d   Lanterns lit %d/%d" % [res.chores_done, res.chores_total, res.lit, res.lanterns]
 	for c in _buttons.get_children():
 		c.queue_free()
+	_leave = null
 	if Session.is_host():
 		_buttons.add_child(LGUi.button("Play again", func(): Session.restart_match(), 260))
 		_buttons.add_child(LGUi.button("Back to lobby", func(): Session.return_to_lobby(), 260))
+		LGUi.focus_first(_buttons)
 	else:
 		_buttons.add_child(LGUi.label("Waiting for the host...", "InkLabel"))
-		var leave := LGUi.button("Leave", func(): Session.leave(""), 200)
-		leave.theme_type_variation = "DangerButton"
-		_buttons.add_child(leave)
-	LGUi.focus_first(_buttons)
+		_leave = LGUi.button("Leave", func(): Session.leave(""), 200)
+		_leave.theme_type_variation = "DangerButton"
+		_buttons.add_child(_leave)
+		# Leave isn't focused up front: an A still held from play would
+		# press it on release. A d-pad or stick press focuses it.
+		var owner := get_viewport().gui_get_focus_owner()
+		if owner:
+			owner.release_focus()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not visible or _leave == null or get_viewport().gui_get_focus_owner() != null:
+		return
+	for action in ["ui_up", "ui_down", "ui_left", "ui_right"]:
+		if event.is_action_pressed(action):
+			_leave.grab_focus()
+			get_viewport().set_input_as_handled()
+			return
