@@ -200,6 +200,7 @@ func _test_bot_nights(games: int) -> void:
 		host.set_process(false)
 		var meetings := 0
 		var was_meeting := false
+		var checked_votes := false
 		var steps := 0
 		var limit := int((host.night_total + 600.0) * 30.0)
 		while host.phase != Rules.Phase.ENDED and steps < limit:
@@ -207,6 +208,10 @@ func _test_bot_nights(games: int) -> void:
 			steps += 1
 			if host.phase == Rules.Phase.MEETING and not was_meeting:
 				meetings += 1
+				checked_votes = false
+			if host.phase == Rules.Phase.MEETING and host.meeting.phase == Rules.MeetingPhase.REVEAL and not checked_votes:
+				checked_votes = true
+				_check_votes_match_words(host, g)
 			was_meeting = host.phase == Rules.Phase.MEETING
 			if steps % 600 == 0:
 				await get_tree().process_frame
@@ -224,6 +229,32 @@ func _test_bot_nights(games: int) -> void:
 		await get_tree().process_frame
 		Session.leave()
 	print("village %d, Hollow %d" % [wins[Rules.Team.VILLAGE], wins[Rules.Team.HOLLOW]])
+
+
+## Every bot's vote must follow the last side it took out loud in the meeting
+## (counting the player just banished, who is already out of the voters),
+## and a bot that said nothing about anyone may only skip.
+func _check_votes_match_words(host: MatchHost, g: int) -> void:
+	var among := host._voters()
+	var out: int = host.meeting.get("result", {}).get("banished", Rules.SKIP_VOTE)
+	if out != Rules.SKIP_VOTE:
+		among.append(out)
+	for voter in host.meeting.votes:
+		if not host.bots.has(voter):
+			continue
+		var bot: BotBrain = host.bots[voter]
+		var side := BotBrain.NO_STANCE
+		var lines := []
+		for line in host.meeting.log:
+			if line.id == voter:
+				lines.append(line.text)
+				var s := bot.stance_of(line.text, among)
+				if s != BotBrain.NO_STANCE:
+					side = s
+		var vote: int = host.meeting.votes[voter]
+		var ok := vote == side or (side == BotBrain.NO_STANCE and vote == Rules.SKIP_VOTE)
+		check(ok, "game %d: %s voted %s after saying %s" % [g, host.actors[voter].name,
+			"skip" if vote == Rules.SKIP_VOTE else host.actors[vote].name, lines])
 
 
 ## The practice round: everyone is a Lamplighter, one lantern starts dark, the
