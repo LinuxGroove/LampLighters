@@ -100,8 +100,8 @@ parts:
     # release). The game starts it privately on localhost only when bots need
     # a language model, and models download into $SNAP_USER_COMMON on first use.
     source:
-      - on amd64: https://github.com/lemonade-sdk/lemonade/releases/download/v2026.39.1/lemonade-embeddable-2026.39.1-ubuntu-x64.tar.gz
-      - on arm64: https://github.com/lemonade-sdk/lemonade/releases/download/v2026.39.1/lemonade-embeddable-2026.39.1-ubuntu-arm64.tar.gz
+      - on amd64: https://github.com/lemonade-sdk/lemonade/releases/download/v2026.40.0/lemonade-embeddable-2026.40.0-ubuntu-x64.tar.gz
+      - on arm64: https://github.com/lemonade-sdk/lemonade/releases/download/v2026.40.0/lemonade-embeddable-2026.40.0-ubuntu-arm64.tar.gz
     source-type: tar
     override-build: |
       craftctl default
