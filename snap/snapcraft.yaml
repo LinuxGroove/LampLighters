@@ -15,6 +15,7 @@ description: |
     meetings using a small language model that runs on your own machine
     (embedded Lemonade Server, downloaded on first use)
   - Made for controllers and handhelds, fully playable with a keyboard
+icon: icon.png
 grade: stable
 confinement: strict
 compression: lzo
