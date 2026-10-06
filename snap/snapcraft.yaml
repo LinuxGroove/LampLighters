@@ -25,6 +25,7 @@ issues: https://github.com/LinuxGroove/LampLighters/issues
 
 platforms:
   amd64:
+  arm64:
 
 apps:
   lantern-out:
@@ -72,18 +73,23 @@ parts:
     override-build: |
       # Godot version used to export; keep in step with the project.
       GODOT_VERSION=4.7.2
+      case "$CRAFT_ARCH_BUILD_FOR" in
+        amd64) ARCH=x86_64; PRESET=Linux ;;
+        arm64) ARCH=arm64; PRESET="Linux ARM64" ;;
+        *) echo "Unsupported architecture: $CRAFT_ARCH_BUILD_FOR"; exit 1 ;;
+      esac
       BASE="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
-      curl -sSfL -o godot.zip "$BASE/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+      curl -sSfL -o godot.zip "$BASE/Godot_v${GODOT_VERSION}-stable_linux.${ARCH}.zip"
       curl -sSfL -o templates.tpz "$BASE/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
       unzip -o -q godot.zip
-      GODOT="$PWD/Godot_v${GODOT_VERSION}-stable_linux.x86_64"
+      GODOT="$PWD/Godot_v${GODOT_VERSION}-stable_linux.${ARCH}"
       export HOME="$PWD/.home"
       TEMPLATES="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
       mkdir -p "$TEMPLATES"
-      unzip -o -q -j templates.tpz templates/linux_release.x86_64 templates/version.txt -d "$TEMPLATES"
+      unzip -o -q -j templates.tpz "templates/linux_release.${ARCH}" templates/version.txt -d "$TEMPLATES"
       "$GODOT" --headless --path . --import
       mkdir -p "$CRAFT_PART_INSTALL/game" "$CRAFT_PART_INSTALL/bin"
-      "$GODOT" --headless --path . --export-release Linux "$CRAFT_PART_INSTALL/game/lantern-out.x86_64"
+      "$GODOT" --headless --path . --export-release "$PRESET" "$CRAFT_PART_INSTALL/game/lantern-out"
       test -f "$CRAFT_PART_INSTALL/game/lantern-out.pck"
       install -m 755 snap/local/lantern-out "$CRAFT_PART_INSTALL/bin/"
       cp LICENSE CREDITS.md "$CRAFT_PART_INSTALL/game/"
@@ -93,7 +99,9 @@ parts:
     # Embedded, self-contained Lemonade Server (the "lemonade-embeddable"
     # release). The game starts it privately on localhost only when bots need
     # a language model, and models download into $SNAP_USER_COMMON on first use.
-    source: https://github.com/lemonade-sdk/lemonade/releases/download/v2026.39.1/lemonade-embeddable-2026.39.1-ubuntu-x64.tar.gz
+    source:
+      - on amd64: https://github.com/lemonade-sdk/lemonade/releases/download/v2026.39.1/lemonade-embeddable-2026.39.1-ubuntu-x64.tar.gz
+      - on arm64: https://github.com/lemonade-sdk/lemonade/releases/download/v2026.39.1/lemonade-embeddable-2026.39.1-ubuntu-arm64.tar.gz
     source-type: tar
     override-build: |
       craftctl default
