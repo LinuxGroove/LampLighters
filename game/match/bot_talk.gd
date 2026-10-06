@@ -129,6 +129,14 @@ func _speak_llm(bot: BotBrain, followup: bool) -> void:
 	for o in host.actors.values():
 		if str(o.name).to_lower() == vote_name:
 			bot.llm_vote = o.id
+	# What the bot says out loud is what the room heard, so it decides the
+	# vote; the model's "vote" field only counts when the line names nobody.
+	var spoken := bot.stance_of(say)
+	if spoken != BotBrain.NO_STANCE:
+		bot.stance = spoken
+		bot.llm_vote = spoken if spoken != Rules.SKIP_VOTE else BotBrain.NO_STANCE
+	elif vote_name == "skip" and bot.stance == BotBrain.NO_STANCE:
+		bot.stance = Rules.SKIP_VOTE
 	host.say(bot.id, say)
 
 
@@ -161,7 +169,7 @@ func prompt_for(bot: BotBrain, followup := false) -> Array:
 			role_text = "You are the WATCHMAN, on the village's side. You can see fresh footprints in the dark."
 		_:
 			role_text = "You are a LAMPLIGHTER, on the village's side. Find the Hollow."
-	var system := "You are %s, a villager in Lantern Out, a cozy, spooky social deduction game. At night the village keeps its lanterns lit while one or two secret Hollow snuff them and take villagers in the dark. Now everyone has gathered at the bell to talk, then vote someone out. %s\nSpeak in the first person, casually, like a person at a party game. One or two short sentences, under 30 words. Only mention facts from your memory below; never invent sightings. Never mention being an AI or a game.\nReply as JSON: {\"say\": \"what you say out loud\", \"vote\": \"a name, or skip\"}." % [a.name, role_text]
+	var system := "You are %s, a villager in Lantern Out, a cozy, spooky social deduction game. At night the village keeps its lanterns lit while one or two secret Hollow snuff them and take villagers in the dark. Now everyone has gathered at the bell to talk, then vote someone out. %s\nSpeak in the first person, casually, like a person at a party game. One or two short sentences, under 30 words. Only mention facts from your memory below; never invent sightings. Never mention being an AI or a game.\nYour vote must match what you say: if you accuse someone, vote for them; if you say you're unsure, vote skip. Only change your vote if you say why.\nReply as JSON: {\"say\": \"what you say out loud\", \"vote\": \"a name, or skip\"}." % [a.name, role_text]
 	var facts := []
 	for mem in bot.memory.slice(maxi(0, bot.memory.size() - 12)):
 		facts.append("- " + str(mem.text))
@@ -176,12 +184,18 @@ func prompt_for(bot: BotBrain, followup := false) -> Array:
 	var said := []
 	for line in m.log.slice(maxi(0, m.log.size() - 8)):
 		said.append("%s: \"%s\"" % [host.actors[line.id].name, line.text])
-	var user := "%s\nStill in the village: %s.\nAlready taken or banished: %s.\nYour memory of tonight:\n%s\nSo far in this meeting:\n%s\n%s" % [
+	var earlier := ""
+	if bot.stance == Rules.SKIP_VOTE:
+		earlier = "\nEarlier in this meeting you said you'd rather skip."
+	elif bot.stance != BotBrain.NO_STANCE:
+		earlier = "\nEarlier in this meeting you said you'd vote for %s." % host.actors[bot.stance].name
+	var user := "%s\nStill in the village: %s.\nAlready taken or banished: %s.\nYour memory of tonight:\n%s\nSo far in this meeting:\n%s%s\n%s" % [
 		why,
 		", ".join(alive),
 		", ".join(gone) if not gone.is_empty() else "nobody",
 		"\n".join(facts),
 		"\n".join(said) if not said.is_empty() else "(nobody has spoken yet)",
+		earlier,
 		"Add one more thing, responding to what others said." if followup else "Your turn to speak.",
 	]
 	return [{"role": "system", "content": system}, {"role": "user", "content": user}]

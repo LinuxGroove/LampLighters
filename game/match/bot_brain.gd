@@ -7,6 +7,11 @@ extends RefCounted
 ## BotTalk turns that memory into meeting statements and votes.
 
 const MEMORY_SIZE := 40
+## Bots have negative ids and SKIP_VOTE is 0, so "nobody" needs its own value.
+const NO_STANCE := -100000
+## How much more a bot must suspect someone new before it abandons the
+## player it accused out loud (and says so).
+const CHANGE_MIND_MARGIN := 60.0
 const LOOK_EVERY := 0.5
 
 var host: MatchHost
@@ -23,7 +28,10 @@ var known := {}
 var taken_by := 0
 var accused_me := 0
 ## Set by an LLM reply; used when voting if still sensible.
-var llm_vote := -1
+var llm_vote := NO_STANCE
+## What this bot has said out loud it wants this meeting: a player's id,
+## SKIP_VOTE, or NO_STANCE if it hasn't taken a side. Its vote follows it.
+var stance := NO_STANCE
 
 var _goal := {}
 var _path := PackedVector3Array()
@@ -150,16 +158,24 @@ func hear(speaker: int, text: String) -> void:
 		weight = -1.0
 	elif suspicion.get(speaker, 0.0) > 60.0:
 		weight = 0.3
+	# A claim to have looked closely (the Seer's power) carries real weight,
+	# unless this bot has reason to doubt the speaker.
+	var seer_claim := low.contains("looked closely") and low.contains("hollow")
 	for o in host.actors.values():
-		if o.id == speaker or not low.contains(str(o.name).to_lower()):
+		if o.id == speaker or not BotBrain.names_in(low, str(o.name)):
 			continue
 		if o.id == id:
 			if accusing:
 				accused_me = speaker
 				add_suspicion(speaker, 10.0)
+				if seer_claim and me().role != Rules.Role.HOLLOW:
+					# I know I'm not Hollow, so this "Seer" is lying.
+					add_suspicion(speaker, 150.0)
 			continue
 		if clearing:
 			add_suspicion(o.id, -5.0 * weight)
+		elif seer_claim and not low.contains("not hollow"):
+			add_suspicion(o.id, 45.0 * weight)
 		elif accusing:
 			add_suspicion(o.id, 6.0 * weight)
 
@@ -196,7 +212,8 @@ func before_meeting(m: Dictionary) -> void:
 func after_meeting() -> void:
 	_goal = {}
 	_path = PackedVector3Array()
-	llm_vote = -1
+	llm_vote = NO_STANCE
+	stance = NO_STANCE
 	accused_me = 0
 	_idle_until = host.time + rng.randf_range(0.0, 1.5)
 
@@ -530,8 +547,9 @@ func _finish_action(a: Dictionary) -> void:
 
 # --- Meetings -------------------------------------------------------------
 
-## The player this bot most wants banished, or SKIP_VOTE.
-func choose_vote() -> int:
+## The player this bot most wants banished, or SKIP_VOTE, before taking
+## into account what it has already said.
+func preferred_vote() -> int:
 	var a := me()
 	var alive := host._voters()
 	if a.role == Rules.Role.HOLLOW:
@@ -539,7 +557,7 @@ func choose_vote() -> int:
 	for k in known:
 		if known[k] == true and k in alive:
 			return k
-	if llm_vote > 0 and llm_vote in alive and llm_vote != id and known.get(llm_vote, true) != false:
+	if llm_vote != NO_STANCE and llm_vote != Rules.SKIP_VOTE and llm_vote in alive and llm_vote != id and known.get(llm_vote, true) != false:
 		return llm_vote
 	var best := Rules.SKIP_VOTE
 	var best_s := 36.0
@@ -553,8 +571,73 @@ func choose_vote() -> int:
 	return best
 
 
+## The vote this bot casts. It votes the way it said it would. It only
+## switches when it learned something that clearly outweighs what it said
+## (a Seer's look, a witnessed take, a much stronger suspect), and then it
+## says so out loud first. A bot that never took a side announces its vote,
+## as a player would, so no vote comes out of nowhere.
+func choose_vote() -> int:
+	var want := preferred_vote()
+	if stance != NO_STANCE and _stance_valid():
+		if want == stance or not _should_change_mind(want):
+			return stance
+		host.say(id, _announce_line(want, true))
+		return want
+	if want != Rules.SKIP_VOTE:
+		host.say(id, _announce_line(want, stance != NO_STANCE))
+	return want
+
+
+func _stance_valid() -> bool:
+	if stance == Rules.SKIP_VOTE:
+		return true
+	var alive := host._voters()
+	if stance not in alive or stance == id:
+		return false
+	if me().role == Rules.Role.HOLLOW and host.actors[stance].role == Rules.Role.HOLLOW:
+		return false
+	return known.get(stance, true) != false
+
+
+func _should_change_mind(want: int) -> bool:
+	if me().role == Rules.Role.HOLLOW:
+		return false
+	if want != Rules.SKIP_VOTE and known.get(want, false) == true:
+		return true
+	if want == Rules.SKIP_VOTE:
+		return false
+	var now := float(suspicion.get(want, 0.0))
+	var before := 0.0 if stance == Rules.SKIP_VOTE else float(suspicion.get(stance, 0.0))
+	return now - before >= CHANGE_MIND_MARGIN
+
+
+func _announce_line(target: int, changed: bool) -> String:
+	var n: String = host.actors[target].name
+	if changed:
+		return ["I've changed my mind. I'm voting %s." % n, "Actually, after all that, I'm going with %s." % n][rng.randi_range(0, 1)]
+	return ["I'm voting %s." % n, "My vote's on %s." % n, "I'll go with %s." % n][rng.randi_range(0, 2)]
+
+
+## Works out what a line of meeting talk commits the speaker to: the one
+## living player it accuses, SKIP_VOTE if it argues for skipping, else NO_STANCE.
+func stance_of(text: String, among: Array = []) -> int:
+	var low := text.to_lower()
+	var named := []
+	for o in (among if not among.is_empty() else host._voters()):
+		if o != id and BotBrain.names_in(low, str(host.actors[o].name)):
+			named.append(o)
+	var accusing := ["suspect", "hollow", "saw", "took", "vote", "voting", "don't trust", "lying", "sus", "odd",
+		"watching", "go with", "going with", "throw you off", "it was", "worries", "agree"].any(func(w): return low.contains(w))
+	var clearing := ["trust", "was with", "innocent", "not hollow", "cleared"].any(func(w): return low.contains(w)) and not low.contains("don't trust")
+	if named.size() == 1 and accusing and not clearing:
+		return named[0]
+	if named.is_empty() and ["skip", "don't know", "not sure", "no idea", "innocent"].any(func(w): return low.contains(w)):
+		return Rules.SKIP_VOTE
+	return NO_STANCE
+
+
 func _hollow_vote(alive: Array) -> int:
-	if llm_vote > 0 and llm_vote in alive and host.actors[llm_vote].role != Rules.Role.HOLLOW:
+	if llm_vote != NO_STANCE and llm_vote != Rules.SKIP_VOTE and llm_vote in alive and host.actors[llm_vote].role != Rules.Role.HOLLOW:
 		return llm_vote
 	# Go along with whoever the village seems to suspect, as long as it isn't a friend.
 	var counts := {}
@@ -562,7 +645,7 @@ func _hollow_vote(alive: Array) -> int:
 		var low := str(line.text).to_lower()
 		for o in alive:
 			var oa: Dictionary = host.actors[o]
-			if oa.role != Rules.Role.HOLLOW and line.id != o and low.contains(str(oa.name).to_lower()):
+			if oa.role != Rules.Role.HOLLOW and line.id != o and BotBrain.names_in(low, str(oa.name)):
 				counts[o] = int(counts.get(o, 0)) + 1
 	var best := Rules.SKIP_VOTE
 	var best_n := 0
@@ -575,8 +658,45 @@ func _hollow_vote(alive: Array) -> int:
 	return best
 
 
-## A short scripted statement when no language model is available.
+## A short scripted statement when no language model is available. Saying
+## it commits the bot to a vote (see stance).
 func statement() -> String:
+	var text := _statement()
+	commit(text)
+	return text
+
+
+## True if `name` appears in lowercase `text` as a whole word, so "Kit"
+## doesn't match "kitchen".
+static func names_in(text: String, name: String) -> bool:
+	var n := name.to_lower()
+	if n == "":
+		return false
+	var from := 0
+	while true:
+		var at := text.find(n, from)
+		if at < 0:
+			return false
+		var before := text.substr(at - 1, 1) if at > 0 else " "
+		var after := text.substr(at + n.length(), 1) if at + n.length() < text.length() else " "
+		if not _is_word_char(before) and not _is_word_char(after):
+			return true
+		from = at + 1
+	return false
+
+
+static func _is_word_char(c: String) -> bool:
+	return c != "" and (c.to_lower() != c.to_upper() or c.is_valid_int())
+
+
+## Updates this bot's stance from something it just said out loud.
+func commit(text: String) -> void:
+	var s := stance_of(text)
+	if s != NO_STANCE:
+		stance = s
+
+
+func _statement() -> String:
 	var a := me()
 	var m := host.meeting
 	var name_of := func(i: int) -> String: return str(host.actors[i].name)
@@ -596,16 +716,54 @@ func statement() -> String:
 			return " ".join(lines)
 	var top := _top_suspect()
 	if top != 0 and float(suspicion[top]) >= 28.0:
-		var where: String = seen.get(top, {}).get("place", "the dark")
-		lines.append(["I don't trust %s. They were hanging around %s." % [name_of.call(top), where],
-			"%s was near %s right before. Bit odd." % [name_of.call(top), where],
-			"Has anyone else been watching %s? I have." % name_of.call(top)][rng.randi_range(0, 2)])
+		var t: String = name_of.call(top)
+		var where: String = seen.get(top, {}).get("place", "")
+		var options := []
+		if _accused_before(top):
+			# Someone already said it: agree, and add what this bot saw.
+			options = ["I agree, %s worries me." % t, "Same here. I've been watching %s too." % t]
+			if where != "":
+				options.append("I agree. I saw %s near %s as well." % [t, where])
+		elif where != "":
+			options = ["I don't trust %s. They were hanging around %s." % [t, where],
+				"%s was near %s right before. Bit odd." % [t, where],
+				"Has anyone else been watching %s? I have." % t]
+		else:
+			options = ["I don't trust %s." % t, "Has anyone else been watching %s? I have." % t]
+		lines.append(_fresh(options))
 	elif lines.is_empty():
 		var place := host.village.landmark_name(a.pos) if seen.is_empty() else _my_recent_place()
 		lines.append(["I was doing chores near %s. Didn't see anything." % place,
 			"Nothing from me. I was busy near %s." % place,
 			"I don't know enough yet. Maybe skip?"][rng.randi_range(0, 2)])
 	return " ".join(lines)
+
+
+## True if someone else has already accused `who` in this meeting.
+func _accused_before(who: int) -> bool:
+	for line in host.meeting.get("log", []):
+		if line.id != id and line.id != who and stance_of_for(line.id, str(line.text)) == who:
+			return true
+	return false
+
+
+## The stance a line commits its speaker to (see stance_of), for any speaker.
+func stance_of_for(speaker: int, text: String) -> int:
+	var saved := id
+	id = speaker
+	var s := stance_of(text)
+	id = saved
+	return s
+
+
+## Picks a line nobody has said word for word yet in this meeting, if it can.
+func _fresh(options: Array) -> String:
+	var said := {}
+	for line in host.meeting.get("log", []):
+		said[str(line.text)] = true
+	var unused := options.filter(func(o): return not said.has(o))
+	var pool := unused if not unused.is_empty() else options
+	return pool[rng.randi_range(0, pool.size() - 1)]
 
 
 func _hollow_statement(a: Dictionary, m: Dictionary, name_of: Callable) -> String:
