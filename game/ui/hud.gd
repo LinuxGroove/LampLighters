@@ -207,7 +207,7 @@ func _on_intro() -> void:
 			names.append(game.player_name(a))
 		hint += "\nYour fellow Hollow: %s." % ", ".join(names)
 	_role_hint.text = hint
-	# A new player who skipped "How to play" on the title screen gets it here
+	# A new player who skipped the tutorial on the title screen gets it here
 	# first, then their role.
 	if not bool(LGSettings.get_value("tutorial", "howto_seen", false)):
 		howto.closed.connect(_introduce_role.bind(hint), CONNECT_ONE_SHOT)

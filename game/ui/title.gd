@@ -1,6 +1,6 @@
 extends Node
-## The title screen: play with bots, host or join on the local network, play
-## online through the shared server, settings and quit.
+## The title screen: how to play (tutorial and practice), play with bots,
+## local network play, online play and leaderboards, settings and quit.
 
 const LOBBY := "res://game/ui/lobby.tscn"
 
@@ -84,11 +84,9 @@ func _add_status(text := "") -> void:
 func _show_main() -> void:
 	_clear()
 	_add_title()
-	_col.add_child(LGUi.button("Practice round", _play_practice))
-	_col.add_child(LGUi.button("How to play", _show_howto))
+	_col.add_child(LGUi.button("How to play", _show_howto_menu))
 	_col.add_child(LGUi.button("Play with bots", _play_solo))
-	_col.add_child(LGUi.button("Host on this network", _host_lan))
-	_col.add_child(LGUi.button("Join on this network", _show_join))
+	_col.add_child(LGUi.button("Local network play", _show_local))
 	_col.add_child(LGUi.button("Play online", _show_online))
 	_col.add_child(LGUi.button("Settings", func(): _show_settings()))
 	_col.add_child(LGUi.button("Your name: %s" % Session.player_name(), func(): _show_name(false)))
@@ -158,8 +156,17 @@ func _play_practice() -> void:
 		Session.start_practice()
 
 
+func _show_howto_menu() -> void:
+	_clear()
+	_col.add_child(LGUi.label("How to play", "HeaderMedium"))
+	_col.add_child(LGUi.button("Tutorial", _show_tutorial))
+	_col.add_child(LGUi.button("Practice round", _play_practice))
+	_col.add_child(LGUi.button("Back", _show_main))
+	LGUi.focus_first(_col)
+
+
 ## The pages open over the menu, which hides so focus stays on the pages.
-func _show_howto() -> void:
+func _show_tutorial() -> void:
 	_col.visible = false
 	var panel := HowToPanel.new()
 	_ui.add_child(panel)
@@ -175,13 +182,13 @@ func _show_welcome() -> void:
 	LGSettings.set_value("tutorial", "welcomed", true)
 	_clear()
 	_add_title()
-	var l := LGUi.label("New here? Start with how to play: a few pages on the goal and the controls. Then try the practice round, with no pressure.", "HintLabel")
+	var l := LGUi.label("New here? Start with the tutorial: a few pages on the goal and the controls. Then try the practice round, with no pressure.", "HintLabel")
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_col.add_child(l)
-	_col.add_child(LGUi.button("How to play", func():
-		_show_main()
-		_show_howto()))
+	_col.add_child(LGUi.button("Tutorial", func():
+		_show_howto_menu()
+		_show_tutorial()))
 	_col.add_child(LGUi.button("Practice round", _play_practice))
 	_col.add_child(LGUi.button("Not now", _show_main))
 	LGUi.focus_first(_col)
@@ -192,6 +199,17 @@ func _play_solo() -> void:
 		return
 	Session.start_solo(5)
 	LGScenes.change_scene(LOBBY)
+
+
+func _show_local() -> void:
+	_clear()
+	_col.add_child(LGUi.label("Local network play", "HeaderMedium"))
+	_col.add_child(LGUi.label("Play with others on the same Wi-Fi or wired network.", "HintLabel"))
+	_col.add_child(LGUi.button("Host on this network", _host_lan))
+	_col.add_child(LGUi.button("Join on this network", _show_join))
+	_col.add_child(LGUi.button("Back", _show_main))
+	_add_status()
+	LGUi.focus_first(_col)
 
 
 func _host_lan() -> void:
@@ -228,7 +246,7 @@ func _show_join() -> void:
 	_col.add_child(LGUi.button("Join with code", join))
 	_col.add_child(LGUi.button("Back", func():
 		Session.stop_browsing()
-		_show_main()))
+		_show_local()))
 	_add_status()
 	Session.browse_lan()
 	LGUi.focus_first(_col)
@@ -320,8 +338,20 @@ func _show_online() -> void:
 			_wait_for_join()
 		else:
 			_leaving = false))
+	_col.add_child(LGUi.button("Leaderboards", _show_leaderboards))
 	_col.add_child(LGUi.button("Back", _show_main))
 	_add_status()
+	LGUi.focus_first(_col)
+
+
+func _show_leaderboards() -> void:
+	_clear()
+	_col.add_child(LGUi.label("Leaderboards", "HeaderMedium"))
+	_col.add_child(LGUi.label("Rounds won in online games.", "HintLabel"))
+	var panel := LGLeaderboardPanel.new()
+	panel.setup(GameConfig.GAME_ID, Session.player_name(), [["wins_weekly", "This week"], ["wins", "All time"]])
+	_col.add_child(panel)
+	_col.add_child(LGUi.button("Back", _show_online))
 	LGUi.focus_first(_col)
 
 

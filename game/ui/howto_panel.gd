@@ -1,7 +1,8 @@
 class_name HowToPanel
 extends Control
-## "How to play": a few parchment pages on the goal, a night, meetings, winning,
-## roles and the controls. Opened from the title menu and the pause menu, and
+## The tutorial: a few parchment pages on the goal, a night, meetings, winning,
+## roles and the controls. Opened from the title menu's How to play screen and
+## the pause menu, and
 ## by itself at the start of a player's first game if they never opened it.
 
 signal closed

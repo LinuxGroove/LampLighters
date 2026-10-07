@@ -33,7 +33,7 @@ func setup(p_game: Game) -> void:
 	_col.add_child(LGUi.button("Controls", func(): _help.visible = not _help.visible))
 	_role_button = LGUi.button("My role", func(): _show_over(game.hud.show_role_card))
 	_col.add_child(_role_button)
-	_col.add_child(LGUi.button("How to play", func(): _show_over(game.hud.howto.open)))
+	_col.add_child(LGUi.button("Tutorial", func(): _show_over(game.hud.howto.open)))
 	var leave := LGUi.button("Leave the game", func(): Session.leave(""))
 	leave.theme_type_variation = "DangerButton"
 	_col.add_child(leave)

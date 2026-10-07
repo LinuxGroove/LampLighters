@@ -27,10 +27,12 @@ only what its character can see, so reading network traffic doesn't help.
 
 ## Playing
 
+- **How to play**: the tutorial pages, and a practice round with bots.
 - **Play with bots**: a solo night on this device.
-- **Host / Join on this network**: hosts are found automatically, or join
-  with the host's code.
-- **Play online**: through a [LinuxGroove game server](https://github.com/LinuxGroove/game-server).
+- **Local network play**: host, or join a game on the same network. Hosts are
+  found automatically, or join with the host's code.
+- **Play online**: through a [LinuxGroove game server](https://github.com/LinuxGroove/game-server),
+  with weekly and all-time leaderboards of rounds won.
 
 Controls (controller first, keyboard always works):
 

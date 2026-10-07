@@ -21,6 +21,8 @@ func _ready() -> void:
 	await _test_scene_switcher()
 	await _test_option_rows()
 	await _test_tutorial_ui()
+	await _test_title_menu()
+	_test_leaderboard_panel()
 	await _test_practice()
 	await _test_bot_nights(games)
 	print("\n%d checks, %d failed" % [checks, failures])
@@ -294,6 +296,58 @@ func _test_practice() -> void:
 	game.queue_free()
 	await get_tree().process_frame
 	Session.leave()
+
+
+func _button_texts(title: Node) -> Array:
+	return title._col.get_children().filter(func(c): return c is Button).map(func(b): return b.text)
+
+
+## The title menu keeps local play and the tutorial on their own screens.
+func _test_title_menu() -> void:
+	LGSettings.set_value("player", "name", "Tester", false)
+	LGSettings.set_value("tutorial", "welcomed", true, false)
+	var title: Node = load("res://game/ui/title.tscn").instantiate()
+	add_child(title)
+	await get_tree().process_frame
+	var main := _button_texts(title)
+	for t in ["How to play", "Play with bots", "Local network play", "Play online"]:
+		check(t in main, "title menu has %s" % t)
+	for t in ["Practice round", "Host on this network", "Join on this network"]:
+		check(not t in main, "%s moved off the title menu" % t)
+	title._show_howto_menu()
+	check(_button_texts(title) == ["Tutorial", "Practice round", "Back"], "how to play holds the tutorial and practice")
+	await get_tree().process_frame
+	title._show_local()
+	check(_button_texts(title) == ["Host on this network", "Join on this network", "Back"], "local network play holds host and join")
+	await get_tree().process_frame
+	var online_was: bool = LGSettings.get_value("online", "enabled")
+	LGSettings.set_value("online", "enabled", true, false)
+	title._show_online()
+	check("Leaderboards" in _button_texts(title), "play online offers leaderboards")
+	LGSettings.set_value("online", "enabled", online_was, false)
+	# Let the menu's deferred focus land before freeing it.
+	await get_tree().process_frame
+	title.queue_free()
+	await get_tree().process_frame
+
+
+## Leaderboard rows: the top list, you highlighted, and your rank below it.
+func _test_leaderboard_panel() -> void:
+	var panel := LGLeaderboardPanel.new()
+	panel.setup("graveyard-hollow", "Tester", [["wins_weekly", "This week"], ["wins", "All time"]])
+	panel.build()
+	panel.show_board({"top": [], "mine": null})
+	check(panel._list.get_child_count() == 1 and panel._mine.text != "", "an empty board says so")
+	var top := []
+	for i in 10:
+		top.append({"rank": i + 1, "name": "P%d" % i, "score": 20 - i, "me": false})
+	panel.show_board({"top": top, "mine": {"rank": 14, "name": "Tester", "score": 3, "me": true}})
+	check(panel._list.get_child_count() == 10, "ten rows on a full board")
+	check(panel._mine.text.contains("#14"), "your rank shows when you're below the top ten")
+	top[2].me = true
+	panel.show_board({"top": top, "mine": top[2]})
+	check(panel._mine.text == "", "no separate line when you're in the top ten")
+	panel.free()
 
 
 ## The how-to pages and role cards build and page through without errors.
