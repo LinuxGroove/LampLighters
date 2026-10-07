@@ -524,6 +524,8 @@ const ABOUT_TEXT := """[center][b]Graveyard Hollow[/b]  v%s
 A LinuxGroove game
 
 [b]Created by[/b]
+Drew VanDine
+Kaden VanDine
 Ken VanDine
 
 [b]Art, sound, music and fonts[/b]

@@ -1,5 +1,7 @@
 # Credits
 
+Made by Drew, Kaden, and Ken VanDine, the LinuxGroove team.
+
 ## Art, audio and fonts
 
 All by [Kenney](https://kenney.nl), released under CC0 (public domain). Each
