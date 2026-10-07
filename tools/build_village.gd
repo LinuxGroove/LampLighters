@@ -250,7 +250,8 @@ func _farm() -> void:
 	var x := x0
 	while x < x1 - 0.1:
 		_piece(FT + "fence.glb", Vector3(x + 1, 0, z0 + off), 90, FT_SCALE)
-		var broken := absf(x + 1 - 16) < 0.5
+		# The panels either side of the fence station (x 15 and 17) are broken.
+		var broken := absf(x + 1 - 16) < 1.5
 		_piece(FT + ("fence-broken.glb" if broken else "fence.glb"), Vector3(x + 1, 0, z1 + off), 90, FT_SCALE)
 		x += 2.0
 	var z := z0
@@ -271,6 +272,9 @@ func _farm() -> void:
 	_piece(SV + "bucket.glb", Vector3(11.3, 0, 14.3), 0, SV_SCALE)
 	_station("pen", Vector3(11.0, 0, 15.5))
 	_station("fence", Vector3(16, 0, 20.4))
+	# Loose planks and a hammer at the gap, so the broken fence reads as a job.
+	_piece(SV + "resource-planks.glb", Vector3(14.6, 0, 20.7), 25, SV_SCALE)
+	_piece(SV + "tool-hammer.glb", Vector3(17.3, 0, 20.6), -40, SV_SCALE * 2)
 	_landmark("the farm", Vector3(16, 0, 15.5))
 	_landmark("the broken fence", Vector3(16, 0, 20))
 	_lantern(Vector3(10.2, 0, 11.4))

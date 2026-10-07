@@ -288,6 +288,7 @@ func _test_practice() -> void:
 	check(host.actors.values().all(func(a): return a.role == Rules.Role.LAMPLIGHTER), "practice: everyone is a Lamplighter")
 	check(host.lit.size() - host.lit_count() == 1, "practice: exactly one lantern starts dark")
 	check(game.player != null and game.hud.guide != null, "practice: the guide is running")
+	_check_station_marks(game, "practice")
 	check(game.hud.hints == null, "practice: no one-time tips")
 	await _drive_guide(game, host)
 	var start_bots: Array = host.bots.keys().map(func(id): return host.actors[id].pos)
@@ -476,6 +477,27 @@ func _test_leaderboard_panel() -> void:
 	plain.build()
 	check(not plain._record.visible, "no record line without a record function")
 	plain.free()
+
+
+## The stations lit up are exactly those where this player has a chore step
+## left, and the fence has its planks and hammer.
+func _check_station_marks(game: Game, when: String) -> void:
+	var wanted := {}
+	for c in game.available_chores():
+		wanted[c.data.station] = true
+	check(not wanted.is_empty(), "%s: the player has chores" % when)
+	var stations := game.village.stations()
+	var wrong := stations.keys().filter(func(id): return stations[id].is_highlighted() != wanted.has(id))
+	check(wrong.is_empty(), "%s: stations with chores are lit, the rest aren't (wrong: %s)" % [when, wrong])
+	# Finishing a chore turns its station off.
+	var you: Dictionary = game.you.duplicate(true)
+	var first: Dictionary = game.available_chores()[0]
+	you.chores[first.index][2] = true
+	game._h_you(you)
+	var still := game.available_chores().any(func(c): return c.data.station == first.data.station)
+	check(stations[first.data.station].is_highlighted() == still, "%s: a finished chore's station goes dark" % when)
+	var props := game.village.get_node("Props")
+	check(props.has_node("resource-planks2") and props.has_node("tool-hammer2"), "the broken fence has planks and a hammer by it")
 
 
 ## The how-to pages and role cards build and page through without errors.

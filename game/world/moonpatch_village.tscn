@@ -62,6 +62,9 @@
 [ext_resource type="PackedScene" path="res://assets/kenney/cube-pets/animal-cow.glb" id="60_cpb18"]
 [ext_resource type="PackedScene" path="res://assets/kenney/cube-pets/animal-pig.glb" id="61_rfptl"]
 [ext_resource type="PackedScene" path="res://assets/kenney/cube-pets/animal-chick.glb" id="62_w4wjd"]
+[ext_resource type="PackedScene" path="res://assets/kenney/survival-kit/resource-planks.glb" id="63_fplnk"]
+[ext_resource type="PackedScene" path="res://assets/kenney/survival-kit/tool-hammer.glb" id="64_fhamr"]
+[ext_resource type="PackedScene" path="res://assets/kenney/fantasy-town-kit/fence-broken.glb" id="65_fbrkn"]
 
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_cin0l"]
 radius = 2.1
@@ -1299,13 +1302,13 @@ transform = Transform3D(-8.742278e-08, 0, 2, 0, 2, 0, -2, 0, -8.742278e-08, 13, 
 [node name="@Node3D@334" type="Node3D" parent="Props" unique_id=79963948 instance=ExtResource("39_70dip")]
 transform = Transform3D(-8.742278e-08, 0, 2, 0, 2, 0, -2, 0, -8.742278e-08, 15, 0, 12.92)
 
-[node name="@Node3D@335" type="Node3D" parent="Props" unique_id=1549044042 instance=ExtResource("39_70dip")]
+[node name="@Node3D@335" type="Node3D" parent="Props" unique_id=1549044042 instance=ExtResource("65_fbrkn")]
 transform = Transform3D(-8.742278e-08, 0, 2, 0, 2, 0, -2, 0, -8.742278e-08, 15, 0, 19.92)
 
 [node name="@Node3D@336" type="Node3D" parent="Props" unique_id=613431025 instance=ExtResource("39_70dip")]
 transform = Transform3D(-8.742278e-08, 0, 2, 0, 2, 0, -2, 0, -8.742278e-08, 17, 0, 12.92)
 
-[node name="@Node3D@337" type="Node3D" parent="Props" unique_id=973097187 instance=ExtResource("39_70dip")]
+[node name="@Node3D@337" type="Node3D" parent="Props" unique_id=973097187 instance=ExtResource("65_fbrkn")]
 transform = Transform3D(-8.742278e-08, 0, 2, 0, 2, 0, -2, 0, -8.742278e-08, 17, 0, 19.92)
 
 [node name="@Node3D@338" type="Node3D" parent="Props" unique_id=1020533788 instance=ExtResource("39_70dip")]
@@ -1343,6 +1346,12 @@ transform = Transform3D(2.4, 0, 0, 0, 2.4, 0, 0, 0, 2.4, 13, 0, 15.5)
 
 [node name="bucket2" type="Node3D" parent="Props" unique_id=1262002314 instance=ExtResource("41_7p8d7")]
 transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, 11.3, 0, 14.3)
+
+[node name="resource-planks2" type="Node3D" parent="Props" unique_id=1410879667 instance=ExtResource("63_fplnk")]
+transform = Transform3D(2.7189233, 0, 1.2678548, 0, 3, 0, -1.2678548, 0, 2.7189233, 14.6, 0, 20.7)
+
+[node name="tool-hammer2" type="Node3D" parent="Props" unique_id=1459761261 instance=ExtResource("64_fhamr")]
+transform = Transform3D(4.5962667, 0, -3.8567255, 0, 6, 0, 3.8567255, 0, 4.5962667, 17.3, 0, 20.6)
 
 [node name="hay-bale-bundled2" type="Node3D" parent="Props" unique_id=102064118 instance=ExtResource("42_epjsg")]
 transform = Transform3D(1.5856098, 0, -0.21410671, 0, 1.6, 0, 0.21410671, 0, 1.5856098, -1.5, 0, 23)

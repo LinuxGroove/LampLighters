@@ -107,6 +107,7 @@ func _ready() -> void:
 		host.setup(config, self, village)
 		host.ended.connect(Session.report_round)
 	Session.left.connect(_on_session_left)
+	private_changed.connect(_mark_chore_stations)
 	LGAudio.play_music(MUSIC_NIGHT, -4.0)
 	Session.report_loaded()
 
@@ -186,6 +187,17 @@ func available_chores() -> Array:
 			var steps: Array = Rules.CHORES[c[0]].steps
 			out.append({"index": i, "key": c[0], "step": c[1], "data": steps[c[1]], "steps": steps.size()})
 	return out
+
+
+## Lights up the stations where this player still has a chore step, so
+## chores can be found without the map.
+func _mark_chore_stations() -> void:
+	var wanted := {}
+	for c in available_chores():
+		wanted[c.data.station] = true
+	var stations := village.stations()
+	for id in stations:
+		stations[id].set_highlight(wanted.has(id))
 
 
 func station_position(station_id: String) -> Vector3:
