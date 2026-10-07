@@ -145,7 +145,6 @@ func host_online() -> bool:
 	if code == "":
 		status.emit(LGOnline.last_error)
 		return false
-	multiplayer.multiplayer_peer = LGOnline.bridge.multiplayer_peer
 	mode = Mode.ONLINE_HOST
 	join_code = code
 	players = {1: _me()}
@@ -155,19 +154,27 @@ func host_online() -> bool:
 
 
 func join_online(code: String) -> bool:
+	if not LGOnline.is_valid_code(code):
+		status.emit("Type the room code shown on the host's screen.")
+		return false
 	leave()
 	status.emit("Connecting to the game server...")
 	if not await LGOnline.connect_async(player_name(), GameConfig.GAME_ID):
 		status.emit(LGOnline.last_error)
 		return false
 	if not await LGOnline.join_room_async(GameConfig.GAME_ID, code):
-		status.emit("No room with code %s." % code)
+		var shown := LGOnline.normalize_code(code)
+		if LGOnline.last_error == LGOnline.NO_ROOM:
+			status.emit("No room with code %s." % shown)
+		elif LGOnline.last_error.begins_with("room_full"):
+			status.emit("Room %s is full." % shown)
+		else:
+			status.emit("Couldn't join room %s." % shown)
 		return false
-	multiplayer.multiplayer_peer = LGOnline.bridge.multiplayer_peer
+	# LGOnline attached the bridge's peer before joining, so the host's
+	# arrival already went through connected_to_server and sent the hello.
 	mode = Mode.ONLINE_CLIENT
 	join_code = LGOnline.normalize_code(code)
-	# The bridge reports the host as connected right away.
-	_send_hello.call_deferred()
 	return true
 
 
@@ -455,8 +462,9 @@ func _broadcast_roster() -> void:
 
 func _kick(id: int, reason: String) -> void:
 	_h_kicked.rpc_id(id, reason)
+	# A well-behaved guest leaves on _h_kicked; drop anyone still here.
 	get_tree().create_timer(0.5).timeout.connect(func():
-		if multiplayer.multiplayer_peer and multiplayer.multiplayer_peer.has_method("disconnect_peer"):
+		if id in multiplayer.get_peers():
 			multiplayer.multiplayer_peer.disconnect_peer(id))
 
 
