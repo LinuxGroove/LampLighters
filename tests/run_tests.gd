@@ -23,6 +23,8 @@ func _ready() -> void:
 	await _test_tutorial_ui()
 	await _test_title_menu()
 	_test_leaderboard_panel()
+	_test_name_maker()
+	await _test_quick_match_bots()
 	await _test_practice()
 	await _test_bot_nights(games)
 	print("\n%d checks, %d failed" % [checks, failures])
@@ -328,6 +330,55 @@ func _test_title_menu() -> void:
 	# Let the menu's deferred focus land before freeing it.
 	await get_tree().process_frame
 	title.queue_free()
+	await get_tree().process_frame
+
+
+## Bot names: player-like, unique, short enough for a name tag.
+func _test_name_maker() -> void:
+	var used := ["MossyOtter"]
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 42
+	for i in 200:
+		var n := LGNameMaker.make(used, rng)
+		check(n.length() <= 16, "name %s fits in 16 letters" % n)
+		check(not n.to_lower() in used.map(func(u): return u.to_lower()), "name %s is unique" % n)
+		used.append(n)
+	var a := RandomNumberGenerator.new()
+	a.seed = 7
+	var b := RandomNumberGenerator.new()
+	b.seed = 7
+	check(LGNameMaker.make([], a) == LGNameMaker.make([], b), "the same seed makes the same name")
+	check(LGNameMaker.make(["Ab"], null, 16, ["A"], ["b"]).begins_with("Ab"), "taken names get a number")
+
+
+## Quick match with nobody else around: you and a random number of named bots,
+## and a countdown that only the host acts on.
+func _test_quick_match_bots() -> void:
+	Session.start_quick_solo()
+	var size := Session.players.size()
+	check(Session.quick and Session.mode == Session.Mode.SOLO, "quick match falls back to a solo game")
+	check(size >= GameConfig.QUICK_MATCH_SIZE.x and size <= GameConfig.QUICK_MATCH_SIZE.y, "quick match has %d villagers" % size)
+	var names: Array = Session.players.values().map(func(p): return p.name)
+	var bots: Array = Session.players.values().filter(func(p): return p.bot)
+	check(bots.size() == size - 1, "everyone else is a bot")
+	check(bots.all(func(p): return not p.name in GameConfig.BOT_NAMES), "quick-match bots get made-up names")
+	check(names.size() == size and names.all(func(n): return names.count(n) == 1), "bot names are unique")
+	check(Session.can_start(), "a quick-match village can start")
+	var left := Session.quick_seconds_left()
+	check(left > Session.QUICK_COUNTDOWN - 1.0 and left <= Session.QUICK_COUNTDOWN, "the countdown is running (%.1f s)" % left)
+	Session.leave()
+	check(not Session.quick and Session.quick_seconds_left() == 0.0, "leaving ends quick match")
+	# A guest learns the countdown from the host, but never acts on it.
+	Session._h_countdown(5.0)
+	check(Session.quick and Session.quick_seconds_left() > 4.0, "the host's countdown reaches a guest")
+	Session._quick_start_msec = 1
+	Session._process(0.0)
+	check(not Session.in_match, "only the host starts the night")
+	Session.leave()
+	# Ordinary bots keep the game's own names.
+	Session.start_solo(1)
+	check(Session.players.values().filter(func(p): return p.bot)[0].name in GameConfig.BOT_NAMES, "bots outside quick match keep their usual names")
+	Session.leave()
 	await get_tree().process_frame
 
 

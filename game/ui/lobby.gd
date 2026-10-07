@@ -193,10 +193,26 @@ func _refresh() -> void:
 		_cyclers[key].set_read_only(not host)
 	_start.visible = host
 	_start.disabled = not Session.can_start()
-	if host and Session.players.size() < GameConfig.MIN_PLAYERS:
+	if Session.quick and Session.quick_seconds_left() > 0.0:
+		if Session.mode == Session.Mode.SOLO:
+			_status.text = "Nobody else was looking for a game, so it's you and some bots."
+		elif host and Session.players.size() < GameConfig.MIN_PLAYERS:
+			_status.text = "Bots fill any empty spots when the countdown ends."
+		elif not host:
+			_status.text = "The night starts by itself when the countdown ends."
+	elif host and Session.players.size() < GameConfig.MIN_PLAYERS:
 		_status.text = "A night needs at least %d villagers. Add bots or wait for friends." % GameConfig.MIN_PLAYERS
 	elif not host:
 		_status.text = "Waiting for the host to start the night."
+	_refresh_code()
+	_refresh_ai()
+
+
+func _refresh_code() -> void:
+	if Session.quick:
+		var left := ceili(Session.quick_seconds_left())
+		_code.text = "Quick match: starts in %d s" % left if left > 0 else "Quick match"
+		return
 	match Session.mode:
 		Session.Mode.LAN_HOST:
 			_code.text = "Join code: %s" % JoinCode.pretty(Session.join_code) if Session.join_code != "" else "No network found"
@@ -204,7 +220,12 @@ func _refresh() -> void:
 			_code.text = "Room code: %s" % Session.join_code
 		_:
 			_code.text = ""
-	_refresh_ai()
+
+
+## Keeps the quick-match countdown ticking.
+func _process(_delta: float) -> void:
+	if Session.quick:
+		_refresh_code()
 
 
 func _refresh_ai() -> void:

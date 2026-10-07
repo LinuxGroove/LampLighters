@@ -5,9 +5,11 @@ extends RefCounted
 const GAME_ID := "graveyard-hollow"
 ## Bump PROTOCOL whenever network messages change; mismatched builds are told
 ## to update instead of desyncing.
-const PROTOCOL := 1
+const PROTOCOL := 2
 const MAX_PLAYERS := 10
 const MIN_PLAYERS := 4
+## Quick match fills the village with bots up to a random size in this range.
+const QUICK_MATCH_SIZE := Vector2i(5, 8)
 
 const LOOKS := [
 	"character-female-a", "character-male-a", "character-female-b", "character-male-b",
