@@ -348,6 +348,22 @@ func _test_leaderboard_panel() -> void:
 	panel.show_board({"top": top, "mine": top[2]})
 	check(panel._mine.text == "", "no separate line when you're in the top ten")
 	panel.free()
+	# Your own record, above the boards.
+	var title_script: Script = load("res://game/ui/title.gd")
+	var rec := LGLeaderboardPanel.new()
+	rec.setup("graveyard-hollow", "Tester", [["wins", "All time"]], title_script.record_text)
+	rec.build()
+	check(rec._record.visible, "the record line shows when the game gives one")
+	rec.show_record({})
+	check(rec._record.text.begins_with("No online rounds yet"), "a player with no online games is told how to start a record")
+	rec.show_record({"rounds": 12, "wins": 5, "village_rounds": 8, "village_wins": 3, "hollow_rounds": 4, "hollow_wins": 2, "survived": 7})
+	check(rec._record.text == "Your online record: 12 rounds, 5 wins (3 as a Lamplighter, 2 as the Hollow), survived 7.", "the record reads: %s" % rec._record.text)
+	rec.free()
+	var plain := LGLeaderboardPanel.new()
+	plain.setup("graveyard-hollow", "Tester", [["wins", "All time"]])
+	plain.build()
+	check(not plain._record.visible, "no record line without a record function")
+	plain.free()
 
 
 ## The how-to pages and role cards build and page through without errors.

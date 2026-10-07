@@ -349,10 +349,26 @@ func _show_leaderboards() -> void:
 	_col.add_child(LGUi.label("Leaderboards", "HeaderMedium"))
 	_col.add_child(LGUi.label("Rounds won in online games.", "HintLabel"))
 	var panel := LGLeaderboardPanel.new()
-	panel.setup(GameConfig.GAME_ID, Session.player_name(), [["wins_weekly", "This week"], ["wins", "All time"]])
+	panel.setup(GameConfig.GAME_ID, Session.player_name(), [["wins_weekly", "This week"], ["wins", "All time"]], record_text)
 	_col.add_child(panel)
 	_col.add_child(LGUi.button("Back", _show_online))
 	LGUi.focus_first(_col)
+
+
+## The player's online record, from the stats the server keeps per round.
+static func record_text(stats: Dictionary) -> String:
+	var rounds := int(stats.get("rounds", 0))
+	if rounds == 0:
+		return "No online rounds yet. Finish one to start your record."
+	return "Your online record: %s, %s (%d as a Lamplighter, %d as the Hollow), survived %d." % [
+		_count(rounds, "round"), _count(int(stats.get("wins", 0)), "win"),
+		int(stats.get("village_wins", 0)), int(stats.get("hollow_wins", 0)),
+		int(stats.get("survived", 0)),
+	]
+
+
+static func _count(n: int, word: String) -> String:
+	return "%d %s%s" % [n, word, "" if n == 1 else "s"]
 
 
 func _show_settings() -> void:
