@@ -23,6 +23,13 @@ const LOOK_COLORS := [
 
 ## Per-player tutorial state. `seen` lists the one-time hints already shown.
 const SETTING_DEFAULTS := {
+	"online": {
+		"enabled": true,
+		"host": OnlineServer.HOST,
+		"port": OnlineServer.PORT,
+		"scheme": OnlineServer.SCHEME,
+		"server_key": OnlineServer.SERVER_KEY,
+	},
 	"tutorial": {
 		"welcomed": false,
 		"howto_seen": false,
