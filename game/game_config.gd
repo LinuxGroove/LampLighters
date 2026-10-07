@@ -70,7 +70,7 @@ const ACTIONS := {
 
 
 static func version() -> String:
-	return str(ProjectSettings.get_setting("application/config/version", "0.0.0"))
+	return LGVersion.current()
 
 
 static func look_scene(look: int) -> PackedScene:
