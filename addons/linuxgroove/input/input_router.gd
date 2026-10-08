@@ -7,7 +7,7 @@ extends Node
 ##   "joy:a"        gamepad button by position: a (south), b (east), x (west),
 ##                  y (north), back, start, lb, rb, ls, rs, up, down, left, right
 ##   "axis:lx-"     stick axis and direction: lx, ly, rx, ry, lt, rt
-##   "mouse:left"   mouse button
+##   "mouse:left"   mouse button: left, right, middle, wheel_up, wheel_down
 ## The router remembers which kind of device was used last so prompts can show
 ## the matching glyphs (Xbox, PlayStation, Switch, Steam Deck or keyboard).
 
@@ -28,6 +28,11 @@ const AXIS_NAMES := {
 	"lx": JOY_AXIS_LEFT_X, "ly": JOY_AXIS_LEFT_Y,
 	"rx": JOY_AXIS_RIGHT_X, "ry": JOY_AXIS_RIGHT_Y,
 	"lt": JOY_AXIS_TRIGGER_LEFT, "rt": JOY_AXIS_TRIGGER_RIGHT,
+}
+
+const MOUSE_NAMES := {
+	"left": MOUSE_BUTTON_LEFT, "right": MOUSE_BUTTON_RIGHT, "middle": MOUSE_BUTTON_MIDDLE,
+	"wheel_up": MOUSE_BUTTON_WHEEL_UP, "wheel_down": MOUSE_BUTTON_WHEEL_DOWN,
 }
 
 ## Glyph file per positional button and controller family. Nintendo puts A on
@@ -135,8 +140,11 @@ static func make_event(spec: String) -> InputEvent:
 			jm.device = -1
 			return jm
 		"mouse":
+			if not MOUSE_NAMES.has(value):
+				push_warning("Input: unknown mouse button %s" % value)
+				return null
 			var mb := InputEventMouseButton.new()
-			mb.button_index = MOUSE_BUTTON_RIGHT if value == "right" else MOUSE_BUTTON_LEFT
+			mb.button_index = MOUSE_NAMES[value]
 			return mb
 	return null
 
