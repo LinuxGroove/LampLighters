@@ -34,6 +34,7 @@ Run the script check and the tests before every commit. Headless runs reimport a
 - **Bump `PROTOCOL`** whenever any RPC's arguments or meaning change.
 - **Online results** come from `Session.report_round` (host only, online rooms only, signed-in players only) to the server's `graveyard-hollow.round_report`, which writes stats and leaderboards. Changing what's reported means changing `modules/src/games/graveyard-hollow.ts` in game-server too, and deploying the server first.
 - **Everything works offline.** No server, no network and online turned off must all still play.
+- **Launch ping.** `game/main.gd` calls `LGLaunchPing.send(GameConfig.GAME_ID)` at startup: one anonymous request to the game server's `/launch` (game, random install id, version, OS, CPU) so the server counts every player, online or not. It's skipped headless, from source and with `DO_NOT_TRACK` set, and never blocks or retries.
 
 ## The shared add-on
 

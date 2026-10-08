@@ -34,6 +34,12 @@ only what its character can see, so reading network traffic doesn't help.
 - **Play online**: through a [LinuxGroove game server](https://github.com/LinuxGroove/game-server),
   with weekly and all-time leaderboards of rounds won.
 
+When the game starts with the internet on, it tells the LinuxGroove game
+server once, so we can count how many people play and on what: a random id
+made on the first run, the game's version, the OS and the CPU, and nothing
+else. It never signs in, and with no network nothing is sent. Set
+`DO_NOT_TRACK=1` to turn it off.
+
 Controls (controller first, keyboard always works):
 
 | Action | Controller | Keyboard |
