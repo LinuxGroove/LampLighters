@@ -25,6 +25,9 @@ in game-ideas.
 Every player sees only what their own light shows. The host sends each device
 only what its character can see, so reading network traffic doesn't help.
 
+Screenshots of every screen, each place in the village, every role, the
+chores, meetings and endings are in [docs/screenshots](docs/screenshots/README.md).
+
 ## Playing
 
 - **How to play**: the tutorial pages, and a practice round with bots.
@@ -78,6 +81,10 @@ godot --path . -- --solo --windowed                    # straight into a night w
 The village is generated from the Kenney kits by `tools/build_village.gd`
 (`godot --headless --path . -s tools/build_village.gd`).
 
+`tools/screenshot.tscn` saves screenshots without a screen (run it under
+`xvfb-run`). `-- --all=docs/screenshots` remakes the whole set and the page
+that lists them; see `tools/screenshot_gallery.gd`.
+
 ## Snap
 
 `snapcraft` builds a strictly confined snap, `graveyard-hollow`, with the
@@ -93,6 +100,7 @@ Ubuntu desktop and on a handheld's gamepad shell. See [docs/packaging.md](docs/p
 | `addons/linuxgroove/` | The shared LinuxGroove add-on (settings, input and glyphs, theme, LAN, online, local AI). Kept self-contained so it can move to its own repository |
 | `addons/com.heroiclabs.nakama/` | Vendored Nakama client |
 | `assets/kenney/` | Kenney packs (CC0) |
+| `docs/screenshots/` | Screenshots of every screen, place, role, meeting and ending |
 | `snap/` | Snap packaging |
 
 Code is MIT (see `LICENSE`); assets and other credits in [CREDITS.md](CREDITS.md).

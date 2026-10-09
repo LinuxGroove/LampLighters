@@ -2,9 +2,25 @@ extends Node
 ## Boots a solo night and saves screenshots, for checking the look without a
 ## screen (run under xvfb-run):
 ##   godot --path . tools/screenshot.tscn -- out_prefix [seconds...]
+## Or every screen, in groups, with a README.md listing them (see
+## tools/screenshot_gallery.gd):
+##   godot --path . --resolution 1280x800 tools/screenshot.tscn -- --all=docs/screenshots [group=meetings]
 
 func _ready() -> void:
 	var args := OS.get_cmdline_user_args()
+	if args.size() > 0 and args[0].begins_with("--all="):
+		LGSettings.register_defaults(GameConfig.SETTING_DEFAULTS)
+		LGInput.register_actions(GameConfig.ACTIONS)
+		LGInput.extend_ui_actions()
+		LGTheme.apply(get_tree().root, 22)
+		var gallery: Node = load("res://tools/screenshot_gallery.gd").new()
+		add_child(gallery)
+		var only := ""
+		for a in args:
+			if a.begins_with("group="):
+				only = a.trim_prefix("group=")
+		gallery.run(args[0].trim_prefix("--all="), only)
+		return
 	var prefix := args[0] if args.size() > 0 else "/tmp/shot"
 	var times := []
 	var meeting := false
