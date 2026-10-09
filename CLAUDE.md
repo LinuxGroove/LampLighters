@@ -9,6 +9,7 @@ godot --headless --path . --import
 godot --headless --path . tools/check_scripts.tscn                  # every script compiles
 godot --headless --path . tests/run_tests.tscn -- --games=10        # unit tests and whole bot nights
 godot --path . -- --solo --windowed                                 # straight into a night with bots
+xvfb-run -a -s "-screen 0 1280x800x24" godot --path . --resolution 1280x800 tools/screenshot.tscn -- --all=docs/screenshots [group=meetings]
 ```
 
 Run the script check and the tests before every commit. Headless runs reimport assets and rewrite many `*.glb.import` files and `icon.png.import`; revert those (`git checkout -- '*.import'`, `rm icon.png.import`) unless you meant to change them.
@@ -25,7 +26,8 @@ Run the script check and the tests before every commit. Headless runs reimport a
 | `addons/linuxgroove/` | Shared LinuxGroove add-on (settings, input, theme, LAN, online, local AI, names) |
 | `addons/com.heroiclabs.nakama/` | Vendored Nakama client with a local patch (see its `VENDORED.md`) |
 | `tests/run_tests.gd` | Headless test runner; add checks with `check(ok, "what")` |
-| `tools/` | Script checker, village builder, screenshots |
+| `tools/` | Script checker, village builder, screenshots (`screenshot_gallery.gd` stages every shot in `docs/screenshots/`) |
+| `docs/screenshots/<group>/` | Screenshots of every screen, made by `tools/screenshot.tscn -- --all=docs/screenshots`, with a README listing them |
 
 ## How the game is built
 
