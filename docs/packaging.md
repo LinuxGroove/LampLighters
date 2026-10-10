@@ -38,8 +38,13 @@ sudo snap connect graveyard-hollow:joystick
 
 | What | Where |
 | --- | --- |
-| Settings and player name | `$SNAP_USER_DATA/.local/share/graveyard-hollow` |
+| Settings, player name, logs and play test recordings | `$SNAP_USER_COMMON/.local/share/graveyard-hollow` |
 | Downloaded AI models | `$SNAP_USER_COMMON/lemonade` |
+
+Neither is copied for every revision. The launcher (`snap/local/graveyard-hollow`)
+sets `XDG_DATA_HOME` (Godot's `user://`) to `$SNAP_USER_COMMON/.local/share`,
+after the gnome extension points it at `$SNAP_USER_DATA`, and its first run
+brings over what an older revision kept in `$SNAP_USER_DATA/.local/share`.
 
 ## Updating Godot or Lemonade
 
