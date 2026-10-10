@@ -30,6 +30,7 @@ func setup(p_game: Game) -> void:
 	var hint := LGUi.label("The night goes on for everyone else.", "HintLabel")
 	_col.add_child(hint)
 	_col.add_child(LGUi.button("Resume", close))
+	_col.add_child(LGPlaytestButton.make())
 	_col.add_child(LGUi.button("Controls", func(): _help.visible = not _help.visible))
 	_role_button = LGUi.button("My role", func(): _show_over(game.hud.show_role_card))
 	_col.add_child(_role_button)

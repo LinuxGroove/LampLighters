@@ -107,7 +107,7 @@ func _show_main() -> void:
 	_col.add_child(LGUi.button("Settings", func(): _show_settings()))
 	_col.add_child(LGUi.button("Your name: %s" % Session.player_name(), func(): _show_name(false)))
 	_col.add_child(LGUi.button("About Graveyard Hollow", _show_about))
-	var quit := LGUi.button("Quit", func(): get_tree().quit())
+	var quit := LGUi.button("Quit", LGScenes.quit)
 	quit.theme_type_variation = "DangerButton"
 	_col.add_child(quit)
 	_add_status(message)
